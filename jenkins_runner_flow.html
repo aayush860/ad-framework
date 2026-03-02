@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework Runner Flow — Jenkins to Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Clash+Display:wght@400;500;600;700&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #08090d;
+  --bg2:      #0e1018;
+  --bg3:      #141720;
+  --border:   #1e2130;
+  --border2:  #252a3a;
+
+  --jenkins:  #e8a838;
+  --docker:   #2496ed;
+  --robot:    #00b4a0;
+  --pytest:   #4b8bbe;
+  --qase:     #9b59f5;
+  --report:   #e84393;
+
+  --text:     #dde1f0;
+  --dim:      #5a6080;
+  --mid:      #9098b8;
+
+  --code-bg:  #060709;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 52px 48px 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0a0c14 0%, var(--bg) 100%);
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 600px 300px at 80% 50%, rgba(36,150,237,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 200px at 20% 50%, rgba(232,168,56,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.header-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--docker);
+  margin-bottom: 14px;
+  opacity: 0.8;
+}
+
+.header h1 {
+  font-family: 'Clash Display', 'Epilogue', sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.header h1 em { font-style: normal; color: var(--jenkins); }
+
+.header p {
+  color: var(--mid);
+  font-size: 15px;
+  max-width: 580px;
+  font-weight: 300;
+}
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--mid);
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── MAIN LAYOUT ── */
+.main { padding: 40px 48px 80px; }
+
+/* ── PHASE BLOCKS ── */
+.phase {
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  animation: fadeSlide 0.4s ease both;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.phase:nth-child(1) { animation-delay: 0.05s; }
+.phase:nth-child(2) { animation-delay: 0.10s; }
+.phase:nth-child(3) { animation-delay: 0.15s; }
+.phase:nth-child(4) { animation-delay: 0.20s; }
+.phase:nth-child(5) { animation-delay: 0.25s; }
+.phase:nth-child(6) { animation-delay: 0.30s; }
+.phase:nth-child(7) { animation-delay: 0.35s; }
+.phase:nth-child(8) { animation-delay: 0.40s; }
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.phase-header:hover { background: rgba(255,255,255,0.02); }
+
+.phase-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.phase-title {
+  font-family: 'Clash Display', 'Epilogue', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.phase-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.phase-chevron {
+  color: var(--dim);
+  font-size: 12px;
+  transition: transform 0.25s;
+}
+
+.phase.open .phase-chevron { transform: rotate(180deg); }
+
+.phase-body {
+  display: none;
+  padding: 0 24px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.phase.open .phase-body { display: block; }
+
+/* color variants */
+.phase.jenkins .phase-header { background: rgba(232,168,56,0.04); }
+.phase.jenkins .phase-num    { background: rgba(232,168,56,0.15); color: var(--jenkins); }
+.phase.jenkins .phase-title  { color: var(--jenkins); }
+.phase.jenkins .phase-badge  { background: rgba(232,168,56,0.12); color: var(--jenkins); border: 1px solid rgba(232,168,56,0.25); }
+.phase.jenkins               { border-color: rgba(232,168,56,0.2); }
+
+.phase.docker .phase-header  { background: rgba(36,150,237,0.04); }
+.phase.docker .phase-num     { background: rgba(36,150,237,0.15); color: var(--docker); }
+.phase.docker .phase-title   { color: var(--docker); }
+.phase.docker .phase-badge   { background: rgba(36,150,237,0.12); color: var(--docker); border: 1px solid rgba(36,150,237,0.25); }
+.phase.docker                { border-color: rgba(36,150,237,0.2); }
+
+.phase.robot .phase-header   { background: rgba(0,180,160,0.04); }
+.phase.robot .phase-num      { background: rgba(0,180,160,0.15); color: var(--robot); }
+.phase.robot .phase-title    { color: var(--robot); }
+.phase.robot .phase-badge    { background: rgba(0,180,160,0.12); color: var(--robot); border: 1px solid rgba(0,180,160,0.25); }
+.phase.robot                 { border-color: rgba(0,180,160,0.2); }
+
+.phase.pytest .phase-header  { background: rgba(75,139,190,0.04); }
+.phase.pytest .phase-num     { background: rgba(75,139,190,0.15); color: var(--pytest); }
+.phase.pytest .phase-title   { color: var(--pytest); }
+.phase.pytest .phase-badge   { background: rgba(75,139,190,0.12); color: var(--pytest); border: 1px solid rgba(75,139,190,0.25); }
+.phase.pytest                { border-color: rgba(75,139,190,0.2); }
+
+.phase.qase .phase-header    { background: rgba(155,89,245,0.04); }
+.phase.qase .phase-num       { background: rgba(155,89,245,0.15); color: var(--qase); }
+.phase.qase .phase-title     { color: var(--qase); }
+.phase.qase .phase-badge     { background: rgba(155,89,245,0.12); color: var(--qase); border: 1px solid rgba(155,89,245,0.25); }
+.phase.qase                  { border-color: rgba(155,89,245,0.2); }
+
+.phase.report .phase-header  { background: rgba(232,67,147,0.04); }
+.phase.report .phase-num     { background: rgba(232,67,147,0.15); color: var(--report); }
+.phase.report .phase-title   { color: var(--report); }
+.phase.report .phase-badge   { background: rgba(232,67,147,0.12); color: var(--report); border: 1px solid rgba(232,67,147,0.25); }
+.phase.report                { border-color: rgba(232,67,147,0.2); }
+
+/* ── CONNECTOR ARROW ── */
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  color: var(--dim);
+  font-size: 18px;
+  position: relative;
+}
+
+.connector::before, .connector::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  background: var(--border2);
+}
+
+.connector::before { top: 0; height: 8px; }
+.connector::after  { bottom: 0; height: 8px; }
+
+/* ── CONTENT INSIDE PHASES ── */
+.desc {
+  color: var(--mid);
+  font-size: 14px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.desc strong { color: var(--text); }
+
+/* code snippet */
+.snippet {
+  background: var(--code-bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 12px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.snippet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+
+.snippet-header .fname {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.5px;
+}
+
+.snippet-header .lang {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.snippet pre {
+  padding: 14px 16px;
+  overflow-x: auto;
+  color: var(--mid);
+}
+
+.kw  { color: #c792ea; }
+.fn  { color: #82aaff; }
+.str { color: #c3e88d; }
+.cm  { color: #3d4460; font-style: italic; }
+.var { color: #ffcb6b; }
+.op  { color: #89ddff; }
+.num { color: #f78c6c; }
+.tag-c { color: var(--robot); }
+.hl  { color: var(--text); }
+
+/* ── DETAIL GRID ── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.detail-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.detail-card .dc-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.detail-card .dc-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ── FLOW MINI DIAGRAM ── */
+.mini-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  background: var(--bg3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.mf-node {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.mf-arrow {
+  color: var(--dim);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── RERUN LOGIC BOX ── */
+.logic-box {
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 14px 0;
+}
+
+.logic-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.logic-row:last-child { border-bottom: none; }
+
+.logic-condition {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 12px 16px;
+  min-width: 160px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logic-action {
+  font-size: 13px;
+  color: var(--mid);
+  padding: 12px 16px;
+  line-height: 1.5;
+}
+
+.logic-action strong { color: var(--text); }
+
+/* ── REPORT CARDS ── */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.report-card {
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.report-card .rc-icon { font-size: 22px; margin-bottom: 8px; }
+.report-card .rc-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.report-card .rc-desc { font-size: 12px; color: var(--dim); }
+
+/* ── BIG FLOW DIAGRAM ── */
+.big-flow {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 24px;
+  margin: 32px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.big-flow::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 500px 200px at 50% 0%, rgba(36,150,237,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.bf-title {
+  font-family: 'Clash Display', 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.bf-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.bf-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.bf-box {
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 140px;
+  border: 1px solid transparent;
+}
+
+.bf-down {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--border2);
+  font-size: 18px;
+  line-height: 1;
+  margin: 2px 0;
+}
+
+.bf-down span {
+  width: 1px;
+  height: 12px;
+  background: var(--border2);
+  display: block;
+}
+
+.bf-label {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--dim);
+  margin-top: 3px;
+}
+
+/* box colors */
+.bx-j  { background: rgba(232,168,56,0.1);  border-color: rgba(232,168,56,0.3);  color: var(--jenkins); }
+.bx-d  { background: rgba(36,150,237,0.1);  border-color: rgba(36,150,237,0.3);  color: var(--docker);  }
+.bx-r  { background: rgba(0,180,160,0.1);   border-color: rgba(0,180,160,0.3);   color: var(--robot);   }
+.bx-p  { background: rgba(75,139,190,0.1);  border-color: rgba(75,139,190,0.3);  color: var(--pytest);  }
+.bx-q  { background: rgba(155,89,245,0.1);  border-color: rgba(155,89,245,0.3);  color: var(--qase);    }
+.bx-rp { background: rgba(232,67,147,0.1);  border-color: rgba(232,67,147,0.3);  color: var(--report);  }
+.bx-g  { background: rgba(100,220,100,0.1); border-color: rgba(100,220,100,0.3); color: #6aff8a;        }
+
+/* ── ROBOT BRIDGE DIAGRAM ── */
+.bridge {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bridge-left, .bridge-right {
+  padding: 20px;
+}
+
+.bridge-left { background: rgba(0,180,160,0.05); border-right: 1px solid var(--border); }
+.bridge-right { background: rgba(75,139,190,0.05); border-left: 1px solid var(--border); }
+
+.bridge-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  background: var(--bg3);
+  font-size: 22px;
+  color: var(--dim);
+}
+
+.bridge-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.bt-robot { color: var(--robot); }
+.bt-pytest { color: var(--pytest); }
+
+.bridge-item {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--mid);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  display: flex;
+  gap: 8px;
+}
+
+.bridge-item:last-child { border-bottom: none; }
+.bridge-item .bi-arrow { color: var(--dim); flex-shrink: 0; }
+
+/* ── TAGS DISPLAY ── */
+.tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.tag-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+.tp-smoke  { background: rgba(255,200,0,0.1);  color: #ffc800; border-color: rgba(255,200,0,0.3); }
+.tp-dir    { background: rgba(0,180,160,0.1);  color: var(--robot); border-color: rgba(0,180,160,0.3); }
+.tp-env    { background: rgba(36,150,237,0.1); color: var(--docker); border-color: rgba(36,150,237,0.3); }
+.tp-qase   { background: rgba(155,89,245,0.1); color: var(--qase); border-color: rgba(155,89,245,0.3); }
+.tp-suite  { background: rgba(232,67,147,0.1); color: var(--report); border-color: rgba(232,67,147,0.3); }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 48px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">EAA Directory Automation · Interview Prep</div>
+  <h1>Framework <em>Runner Flow</em><br>Jenkins → Docker → Robot → Report</h1>
+  <p>How the framework executes from a Jenkins trigger to a final HTML report — every layer explained with code snippets.</p>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--jenkins)"></div> Jenkins</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--docker)"></div> Docker</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--robot)"></div> Robot Framework</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pytest)"></div> pytest / Python</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--qase)"></div> QASE</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--report)"></div> Reports</div>
+</div>
+
+<div class="main">
+
+  <!-- BIG FLOW DIAGRAM -->
+  <div class="big-flow">
+    <div class="bf-title">Complete Execution Flow — Top to Bottom</div>
+    <div class="bf-grid">
+
+      <div class="bf-row">
+        <div class="bf-box bx-j">Jenkins Job Triggered</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">params injected</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-j">Git Clone (fresh branch)</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">code on agent</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-d">Docker Image Built</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">-v mount + -e env vars</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-d">Container Starts</div>
+        <div style="color:var(--dim); font-size:13px;">→</div>
+        <div class="bf-box bx-d" style="min-width:120px; font-size:11px;">entrypoint.sh<br>SSH setup</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">exec robot command</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-r">Robot Framework</div>
+        <div style="color:var(--dim); font-size:13px;">→</div>
+        <div class="bf-box bx-r" style="min-width:120px; font-size:11px;">.robot file<br>reads tags</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">imports Python class as Library</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-r">Suite Setup → setup_class()</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">directory + IDP created</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-p">pytest test methods execute</div>
+        <div style="color:var(--dim); font-size:13px;">→</div>
+        <div class="bf-box bx-q" style="min-width:120px; font-size:11px;">QASE Listener<br>real-time push</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">output.xml written via volume mount</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-j">Pass % Check</div>
+        <div style="color:var(--dim); font-size:13px;">→</div>
+        <div class="bf-box bx-j" style="min-width:120px; font-size:11px;">Re-run if<br>above threshold</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">rebot --merge</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-rp">output.xml + log.html + report.html</div>
+      </div>
+      <div class="bf-down"><span></span>▼<div class="bf-label">Robot Plugin reads output.xml</div></div>
+
+      <div class="bf-row">
+        <div class="bf-box bx-rp">Jenkins Dashboard + Trend Graph</div>
+        <div style="color:var(--dim); font-size:13px;">+</div>
+        <div class="bf-box bx-q" style="min-width:120px;">QASE Dashboard</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 1: JENKINS PARAMS -->
+  <div class="phase jenkins open">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">1</div>
+      <div class="phase-title">Jenkins Job — Parameters & Triggers</div>
+      <div class="phase-badge">Jenkins</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">Jenkins job is triggered manually or on schedule. Parameters defined in the Jenkins UI are passed into the build. These become <strong>environment variables</strong> that flow all the way into the Python test code.</div>
+      <div class="detail-grid">
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--jenkins)">Runtime Config</div>
+          <div class="dc-value">contractID, connector_name, cloudzone, cleanup</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--jenkins)">Test Selection</div>
+          <div class="dc-value">inclusion_tags, exclusion_tags, tests_to_run</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--jenkins)">Re-run Control</div>
+          <div class="dc-value">Rebuild_on_Failure, Pass_Percentage_To_Re_Run</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--jenkins)">Reporting</div>
+          <div class="dc-value">QASE_API_TOKEN, QASE_RUN_ID, QASE_PROJECT</div>
+        </div>
+      </div>
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">build_step.sh — tag processing</span>
+          <span class="lang" style="background:rgba(232,168,56,0.15); color:var(--jenkins)">bash</span>
+        </div>
+        <pre><span class="cm"># Jenkins params → Robot -i / -e / -t flags</span>
+<span class="kw">if</span> [ ! -z <span class="str">"$inclusion_tags"</span> ]; <span class="kw">then</span>
+    <span class="kw">for</span> tag <span class="kw">in</span> <span class="var">$inclusion_tags</span>; <span class="kw">do</span>
+        include_tags+=<span class="str">"-i $tag "</span>   <span class="cm"># → -i smoke -i ad-directory</span>
+    <span class="kw">done</span>
+<span class="kw">fi</span>
+
+<span class="cm"># Result: include_tags="-i smoke -i ad-directory"
+#         exclude_tags="-e fips_connector"</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 2: GIT + DOCKER BUILD -->
+  <div class="phase docker">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">2</div>
+      <div class="phase-title">Git Clone + Docker Image Build</div>
+      <div class="phase-badge">Docker</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">Fresh code is cloned from the specified branch. The <strong>Dockerfile</strong> from the repo is used to build a self-contained image with everything pre-installed — Python, pytest, Robot Framework, ldap3, selenium, all packages. Every run gets a clean identical environment regardless of which Jenkins agent picks up the job.</div>
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">build_step.sh</span>
+          <span class="lang" style="background:rgba(36,150,237,0.15); color:var(--docker)">bash</span>
+        </div>
+        <pre><span class="cm"># 1. Clone fresh code</span>
+git clone -b <span class="var">$git_branch</span> https://git.company.com/dyno.git
+
+<span class="cm"># 2. Copy Dockerfile from repo</span>
+sudo cp dyno/lib/dyno/products/hybrid_griffin/Dockerfile .
+
+<span class="cm"># 3. Build image — installs all deps inside</span>
+sudo docker build -t auto_griffin .</pre>
+      </div>
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">Dockerfile — key installs</span>
+          <span class="lang" style="background:rgba(36,150,237,0.15); color:var(--docker)">dockerfile</span>
+        </div>
+        <pre><span class="kw">FROM</span> ubuntu:focal
+<span class="cm"># System packages</span>
+<span class="kw">RUN</span> apt-get install -y python3 python3-pip git ssh ldap3 ...
+
+<span class="cm"># Python packages</span>
+<span class="kw">RUN</span> pip3 install \
+    pytest==<span class="num">7.2.2</span> \
+    robotframework==<span class="num">6.1.1</span> \
+    ldap3==<span class="num">2.9.1</span> \
+    qase-robotframework==<span class="num">2.0.1</span> \
+    selenium requests deepdiff ...
+
+<span class="cm"># Copy entire dyno project into image</span>
+<span class="kw">COPY</span> dyno/tests  <span class="var">${DYNO_HOME}</span>/tests
+<span class="kw">COPY</span> dyno/lib    <span class="var">${DYNO_HOME}</span>/lib
+<span class="kw">COPY</span> dyno/bin    <span class="var">${DYNO_HOME}</span>/bin
+
+<span class="kw">ENTRYPOINT</span> [<span class="str">"dyno-entrypoint.sh"</span>]</pre>
+      </div>
+      <div class="desc"><strong>Why Docker?</strong> No dependency conflicts. Same Python version. Same package versions. Isolated from the Jenkins agent's OS. Clean state every run.</div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 3: CONTAINER START + ENTRYPOINT -->
+  <div class="phase docker">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">3</div>
+      <div class="phase-title">Container Starts — entrypoint.sh + Environment Injection</div>
+      <div class="phase-badge">Docker</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">When the container starts, <strong>entrypoint.sh runs first</strong> — before any test command. It sets up SSH agent and loads the access key needed to communicate with internal infrastructure. Only then does it hand control over to the robot command.</div>
+
+      <div class="mini-flow">
+        <div class="mf-node" style="background:rgba(36,150,237,0.1); color:var(--docker); border:1px solid rgba(36,150,237,0.2)">docker run</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(36,150,237,0.1); color:var(--docker); border:1px solid rgba(36,150,237,0.2)">entrypoint.sh</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(36,150,237,0.1); color:var(--docker); border:1px solid rgba(36,150,237,0.2)">ssh-agent starts</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(36,150,237,0.1); color:var(--docker); border:1px solid rgba(36,150,237,0.2)">key loaded</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(0,180,160,0.1); color:var(--robot); border:1px solid rgba(0,180,160,0.2)">exec robot cmd</div>
+      </div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">build_step.sh — docker run</span>
+          <span class="lang" style="background:rgba(36,150,237,0.15); color:var(--docker)">bash</span>
+        </div>
+        <pre>sudo docker run \
+  -v <span class="var">${PWD}</span>:/tmp \                    <span class="cm"># Jenkins workspace ↔ /tmp in container</span>
+  -e <span class="var">contractID</span>=<span class="var">$contractID</span> \       <span class="cm"># Jenkins param → env var in container</span>
+  -e <span class="var">connector_name</span>=<span class="var">$connector_name</span> \  <span class="cm"># read by os.environ.get() in Python</span>
+  -e <span class="var">cleanup</span>=<span class="var">$cleanup</span> \
+  -e <span class="var">cloudzone</span>=<span class="var">$cloudzone</span> \
+  auto_griffin \
+  /bin/sh -c <span class="str">"cd /tmp/dyno/bin && ./dyno -m robot ..."</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">entrypoint.sh — simplified</span>
+          <span class="lang" style="background:rgba(36,150,237,0.15); color:var(--docker)">bash</span>
+        </div>
+        <pre><span class="cm"># Start SSH agent for internal access</span>
+<span class="kw">eval</span> `ssh-agent -s -a /ssh-agent/agent`
+
+<span class="cm"># Load access key (needed to reach connectors/infra)</span>
+ssh-add /root/.ssh/akanebula.key
+
+<span class="cm"># Hand over to robot command</span>
+<span class="kw">exec</span> <span class="str">"$@"</span></pre>
+      </div>
+
+      <div class="desc"><strong>Volume mount</strong> <code style="color:var(--docker); font-family: IBM Plex Mono, monospace">-v ${PWD}:/tmp</code> is the bridge — test reports written inside the container at <code style="color:var(--robot); font-family: IBM Plex Mono, monospace">/tmp/dyno/bin/</code> automatically appear on the Jenkins agent workspace after the container exits.</div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 4: ROBOT + PYTHON BRIDGE -->
+  <div class="phase robot">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">4</div>
+      <div class="phase-title">Robot Framework — The Bridge to Python</div>
+      <div class="phase-badge">Robot Framework</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">Robot Framework runs the <strong>.robot file</strong>. The robot file contains <strong>zero test logic</strong>. It simply imports the Python pytest class as a Library, maps lifecycle hooks, and calls Python methods by name. Robot Framework acts purely as an <strong>orchestrator and reporter</strong>.</div>
+
+      <div class="bridge">
+        <div class="bridge-left">
+          <div class="bridge-title bt-robot">Robot .robot file</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Library imports Python class</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Suite Setup maps to setup_class</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Test Setup maps to setup</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Test Teardown maps to teardown</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Suite Teardown maps to teardown_class</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Each test calls Python method by name</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> Tags added for filtering</div>
+        </div>
+        <div class="bridge-center">⇄</div>
+        <div class="bridge-right">
+          <div class="bridge-title bt-pytest">Python / pytest class</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> setup_class() — dir + IDP creation</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> setup() — per test init + AD cleanup</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> teardown() — delete groups + sync</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> teardown_class() — delete dir + IDP</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> test_01_...() actual test logic</div>
+          <div class="bridge-item"><span class="bi-arrow">→</span> All business logic + assertions</div>
+        </div>
+      </div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">Test_Active_Directory.robot</span>
+          <span class="lang" style="background:rgba(0,180,160,0.15); color:var(--robot)">robot</span>
+        </div>
+        <pre><span class="cm">*** Settings ***</span>
+<span class="cm"># Import Python class as Robot Library</span>
+<span class="tag-c">Library</span>    Test_Active_Directory.py  <span class="op">WITH NAME</span>  obj
+
+<span class="tag-c">Suite Setup</span>      obj.setup_class     <span class="cm"># runs once — creates dir + IDP</span>
+<span class="tag-c">Test Setup</span>       obj.setup           <span class="cm"># runs before each test</span>
+<span class="tag-c">Test Teardown</span>    obj.teardown        <span class="cm"># runs after each test</span>
+<span class="tag-c">Suite Teardown</span>   obj.teardown_class  <span class="cm"># runs once — cleanup</span>
+
+<span class="cm">*** Test Cases ***</span>
+test_01_create_configure_and_check_if_directory_is_up
+    [<span class="tag-c">Documentation</span>]  Create configure and check if directory is up
+    [<span class="tag-c">Tags</span>]  <span class="str">smoke</span>  <span class="str">ad-directory</span>  <span class="str">dir</span>  <span class="str">uc_ext_sanity</span>  <span class="str">egt_advanced</span>
+    test_01_create_configure_and_check_if_directory_is_up  <span class="cm"># calls Python method</span>
+
+test_02_create_directory_configure_sync_users_groups
+    [<span class="tag-c">Tags</span>]  <span class="str">smoke</span>  <span class="str">dir</span>  <span class="str">ad-directory</span>  <span class="str">beta_sanity</span>  <span class="str">Q-473</span>
+    test_02_create_directory_configure_sync_users_groups</pre>
+      </div>
+
+      <div class="desc"><strong>Tags in action</strong> — Jenkins passes <code style="color:var(--robot); font-family: IBM Plex Mono, monospace">-i smoke</code> to run only smoke tests, <code style="color:var(--robot); font-family: IBM Plex Mono, monospace">-e fips_connector</code> to exclude FIPS tests. No code changes needed — just Jenkins parameters.</div>
+
+      <div class="tags-wrap">
+        <div class="tag-pill tp-smoke">smoke — quick sanity</div>
+        <div class="tag-pill tp-dir">ad-directory — AD specific</div>
+        <div class="tag-pill tp-dir">dir — all directories</div>
+        <div class="tag-pill tp-env">uc_ext_sanity — external sanity</div>
+        <div class="tag-pill tp-suite">egt_advanced — EGT suite</div>
+        <div class="tag-pill tp-env">beta_sanity — beta env</div>
+        <div class="tag-pill tp-suite">fips_connector — FIPS only</div>
+        <div class="tag-pill tp-qase">Q-473 — QASE test ID</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 5: PYTEST EXECUTION -->
+  <div class="phase pytest">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">5</div>
+      <div class="phase-title">pytest Test Execution — The Actual Tests</div>
+      <div class="phase-badge">pytest</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">Robot Framework calls the Python methods. This is where the actual test logic runs. Config is read from environment variables (injected by Docker). Tests interact with EAA via the API layer, AD via LDAP, and validate results.</div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">Test_Active_Directory.py — how env vars become config</span>
+          <span class="lang" style="background:rgba(75,139,190,0.15); color:var(--pytest)">python</span>
+        </div>
+        <pre><span class="kw">class</span> <span class="fn">Test_Active_Directory</span>:
+
+    <span class="kw">@classmethod</span>
+    <span class="kw">def</span> <span class="fn">setup_class</span>(<span class="var">cls</span>):
+        <span class="cm"># Jenkins params → Docker -e flag → os.environ</span>
+        <span class="var">cls</span>.cleanup        = os.<span class="fn">environ.get</span>(<span class="str">"cleanup"</span>, <span class="str">"YES"</span>)
+        <span class="var">cls</span>.connector_name = os.<span class="fn">environ.get</span>(<span class="str">"connector_name"</span>)
+
+        <span class="cm"># Static config from JSON files</span>
+        <span class="var">cls</span>.dirConfigData  = Config_Provider.<span class="fn">get_param</span>(<span class="str">"DirectoryConfig"</span>)
+
+        <span class="cm"># Create directory in EAA → verify → create IDP</span>
+        <span class="var">cls</span>.dir_name, <span class="var">cls</span>.dir_uuid, <span class="var">cls</span>.result = \
+            <span class="var">cls</span>.dir_generic_utils\
+            .<span class="fn">create_configure_verify_if_directory_is_up</span>(
+                dir_type=<span class="str">"AD"</span>,
+                dir_config=<span class="var">cls</span>.dirConfigData[<span class="str">'ActiveDirectory2'</span>])</pre>
+      </div>
+
+      <div class="mini-flow">
+        <div class="mf-node" style="background:rgba(75,139,190,0.1); color:var(--pytest); border:1px solid rgba(75,139,190,0.2)">Config read</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(75,139,190,0.1); color:var(--pytest); border:1px solid rgba(75,139,190,0.2)">Directory_Apis</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(75,139,190,0.1); color:var(--pytest); border:1px solid rgba(75,139,190,0.2)">EAA REST API</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(75,139,190,0.1); color:var(--pytest); border:1px solid rgba(75,139,190,0.2)">Connector</div>
+        <div class="mf-arrow">→</div>
+        <div class="mf-node" style="background:rgba(75,139,190,0.1); color:var(--pytest); border:1px solid rgba(75,139,190,0.2)">AD (LDAP)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 6: QASE -->
+  <div class="phase qase">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">6</div>
+      <div class="phase-title">QASE — Real-time Test Management</div>
+      <div class="phase-badge">QASE</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">QASE is a test management tool. The <strong>QASE listener</strong> hooks into Robot Framework events and pushes results to the QASE dashboard in real time as each test completes — you don't have to wait for the run to finish to see results.</div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">robot command — QASE integration</span>
+          <span class="lang" style="background:rgba(155,89,245,0.15); color:var(--qase)">bash</span>
+        </div>
+        <pre><span class="cm"># QASE env vars tell the listener where to push results</span>
+<span class="var">QASE_MODE</span>=testops
+<span class="var">QASE_TESTOPS_RUN_ID</span>=<span class="var">${QASE_RUN_ID}</span>
+<span class="var">QASE_TESTOPS_PROJECT</span>=<span class="var">${QASE_PROJECT}</span>
+
+./dyno -m robot \
+  <span class="cm"># listener hooks into Robot Framework events</span>
+  --listener qaseio.robotframework.Listener \
+  Test_Active_Directory.robot</pre>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--qase)">Tag → QASE mapping</div>
+          <div class="dc-value" style="font-family: IBM Plex Mono, monospace; font-size:12px; color:var(--mid)">Robot tag <span style="color:var(--qase)">Q-473</span> maps to QASE test case ID 473</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--qase)">Real-time push</div>
+          <div class="dc-value">Results visible in QASE as each test passes or fails — no waiting</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--qase)">Run tracking</div>
+          <div class="dc-value">Each Jenkins build maps to a QASE test run for historical tracking</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 7: RERUN LOGIC -->
+  <div class="phase jenkins">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">7</div>
+      <div class="phase-title">Smart Re-run Logic — Threshold Based</div>
+      <div class="phase-badge">Jenkins</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">After the first run, Jenkins reads <code style="color:var(--jenkins); font-family: IBM Plex Mono, monospace">output.xml</code> from the volume-mounted workspace, calculates pass percentage, and decides whether to re-run failed tests.</div>
+
+      <div class="logic-box">
+        <div class="logic-row">
+          <div class="logic-condition" style="color: #6aff8a;">pass% == 100</div>
+          <div class="logic-action"><strong>All passed.</strong> Exit 0, done. No re-run needed.</div>
+        </div>
+        <div class="logic-row">
+          <div class="logic-condition" style="color: var(--jenkins);">pass% &gt; threshold</div>
+          <div class="logic-action"><strong>Re-run only failed tests</strong> using <code style="font-family: IBM Plex Mono, monospace; color:var(--robot)">--rerunfailed output.xml</code> → merge results with <code style="font-family: IBM Plex Mono, monospace; color:var(--robot)">rebot --merge</code></div>
+        </div>
+        <div class="logic-row">
+          <div class="logic-condition" style="color: var(--report);">pass% &lt; threshold</div>
+          <div class="logic-action"><strong>Too many failures.</strong> Exit 1, fail the build. Not worth re-running.</div>
+        </div>
+        <div class="logic-row">
+          <div class="logic-condition" style="color: var(--dim);">Rebuild = No</div>
+          <div class="logic-action"><strong>Re-run disabled.</strong> Exit 1 regardless of pass percentage.</div>
+        </div>
+      </div>
+
+      <div class="snippet">
+        <div class="snippet-header">
+          <span class="fname">build_step.sh — rerun + merge</span>
+          <span class="lang" style="background:rgba(232,168,56,0.15); color:var(--jenkins)">bash</span>
+        </div>
+        <pre><span class="cm"># Re-run only failed tests</span>
+./dyno -m robot \
+    --rerunfailed output.xml \    <span class="cm"># reads failures from first run</span>
+    -o finalo.xml \               <span class="cm"># writes re-run results separately</span>
+    Test_Active_Directory.robot
+
+<span class="cm"># Merge first run + re-run into one clean report</span>
+rebot --output output.xml \
+      --merge output.xml finalo.xml
+<span class="cm"># Result: failed test that passed on re-run → shows as PASS</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">▼</div>
+
+  <!-- PHASE 8: REPORTS -->
+  <div class="phase report">
+    <div class="phase-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="phase-num">8</div>
+      <div class="phase-title">Reports — Robot HTML + Jenkins Dashboard</div>
+      <div class="phase-badge">Reports</div>
+      <div class="phase-chevron">▼</div>
+    </div>
+    <div class="phase-body">
+      <div class="desc">Robot Framework automatically generates three output files. These come back to the Jenkins workspace via the volume mount. Jenkins Robot Framework Plugin reads <code style="color:var(--report); font-family: IBM Plex Mono, monospace">output.xml</code> and displays results in the Jenkins UI.</div>
+
+      <div class="report-grid">
+        <div class="report-card" style="background:rgba(232,67,147,0.05); border-color:rgba(232,67,147,0.2)">
+          <div class="rc-icon">📄</div>
+          <div class="rc-name" style="color:var(--report)">output.xml</div>
+          <div class="rc-desc">Raw machine-readable results. Read by Jenkins plugin and rebot merge.</div>
+        </div>
+        <div class="report-card" style="background:rgba(232,67,147,0.05); border-color:rgba(232,67,147,0.2)">
+          <div class="rc-icon">📋</div>
+          <div class="rc-name" style="color:var(--report)">log.html</div>
+          <div class="rc-desc">Detailed step-by-step execution log. Every keyword, every variable value.</div>
+        </div>
+        <div class="report-card" style="background:rgba(232,67,147,0.05); border-color:rgba(232,67,147,0.2)">
+          <div class="rc-icon">📊</div>
+          <div class="rc-name" style="color:var(--report)">report.html</div>
+          <div class="rc-desc">High-level pass/fail summary with statistics and tag breakdown.</div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--report)">Jenkins Plugin</div>
+          <div class="dc-value">Robot Framework Plugin reads output.xml → displays pass/fail count per build</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--report)">Trend Graph</div>
+          <div class="dc-value">Jenkins plots pass/fail trend across all historical builds</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--report)">Build Status</div>
+          <div class="dc-value">Build marked PASS / UNSTABLE / FAIL based on configurable thresholds</div>
+        </div>
+        <div class="detail-card">
+          <div class="dc-label" style="color:var(--qase)">QASE Dashboard</div>
+          <div class="dc-value">Real-time results already pushed. Historical test run analytics available.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  EAA Directory Automation Framework · Jenkins Runner Flow · Interview Preparation Guide
+</footer>
+
+<script>
+  // open first phase by default, rest closed
+  document.querySelectorAll('.phase').forEach((p, i) => {
+    if (i !== 0) p.classList.remove('open');
+  });
+</script>
+
+</body>
+</html>

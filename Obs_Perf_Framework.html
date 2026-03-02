@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observability Performance Framework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+:root {
+  --bg: #080c14;
+  --surface: #0f1624;
+  --surface2: #161f30;
+  --surface3: #1a2540;
+  --border: #1e2d47;
+  --border-soft: #162035;
+  --blue: #3b82f6;
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --orange: #f59e0b;
+  --purple: #8b5cf6;
+  --pink: #ec4899;
+  --yellow: #eab308;
+  --text: #e2e8f0;
+  --muted: #4b5a72;
+  --muted2: #64748b;
+  --highlight: #f1f5f9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  padding: 40px 20px 80px;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+.wrap { max-width: 1060px; margin: 0 auto; position: relative; z-index: 1; }
+
+@keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+@keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+/* ── Shared ── */
+.section-header { text-align:center; margin-bottom:40px; }
+.eyebrow { font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px; display:block; }
+.section-title { font-family:'Syne',sans-serif; font-size:clamp(18px,3vw,30px); font-weight:800; color:var(--highlight); }
+.section-sub   { color:var(--muted2); font-size:12px; margin-top:6px; }
+.divider { border:none; border-top:1px solid var(--border); margin:60px 0; }
+
+.badge { font-size:9px; padding:2px 7px; border-radius:4px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+.badge-yellow { background:rgba(234,179,8,0.12);  color:var(--yellow); }
+.badge-green  { background:rgba(16,185,129,0.12); color:var(--green); }
+.badge-blue   { background:rgba(59,130,246,0.12); color:var(--blue); }
+.badge-cyan   { background:rgba(6,182,212,0.12);  color:var(--cyan); }
+.badge-orange { background:rgba(245,158,11,0.12); color:var(--orange); }
+.badge-purple { background:rgba(139,92,246,0.12); color:var(--purple); }
+
+.note {
+  font-size:10px; color:var(--muted2); margin-top:12px;
+  padding:8px 12px; border-left:2px solid var(--border);
+  background:rgba(255,255,255,0.015); border-radius:0 6px 6px 0; line-height:1.6;
+}
+
+/* ── Architecture blocks ── */
+.phase-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; padding-left:2px; }
+
+.block { border-radius:12px; border:1px solid var(--border); background:var(--surface); padding:18px 20px; position:relative; overflow:hidden; }
+.block::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
+.block-pre   { border-color:rgba(234,179,8,0.25);  background:rgba(234,179,8,0.04); } .block-pre::before   { background:var(--yellow); }
+.block-dev   { border-color:rgba(16,185,129,0.25); background:rgba(16,185,129,0.04); } .block-dev::before   { background:var(--green); }
+.block-k8s   { border-color:rgba(59,130,246,0.25); background:rgba(59,130,246,0.04); } .block-k8s::before   { background:var(--blue); }
+.block-infra { border-color:rgba(245,158,11,0.25); background:rgba(245,158,11,0.04); } .block-infra::before { background:var(--orange); }
+.block-siem  { border-color:rgba(139,92,246,0.25); background:rgba(139,92,246,0.04); } .block-siem::before  { background:var(--purple); }
+
+.block-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.block-pre   .block-title { color:var(--yellow); }
+.block-dev   .block-title { color:var(--green); }
+.block-k8s   .block-title { color:var(--blue); }
+.block-infra .block-title { color:var(--orange); }
+.block-siem  .block-title { color:var(--purple); }
+
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px; }
+.card { background:var(--surface2); border:1px solid var(--border-soft); border-radius:8px; padding:11px 13px; transition:border-color 0.18s,transform 0.18s; cursor:default; }
+.card:hover { transform:translateY(-2px); }
+.card-name   { font-size:11px; font-weight:700; margin-bottom:4px; }
+.card-detail { font-size:10px; color:var(--muted2); line-height:1.5; }
+.block-pre   .card-name { color:var(--yellow); } .block-pre   .card:hover { border-color:var(--yellow); }
+.block-dev   .card-name { color:var(--green);  } .block-dev   .card:hover { border-color:var(--green); }
+.block-k8s   .card-name { color:var(--blue);   } .block-k8s   .card:hover { border-color:var(--blue); }
+.block-infra .card-name { color:var(--orange);  } .block-infra .card:hover { border-color:var(--orange); }
+.block-siem  .card-name { color:var(--purple);  } .block-siem  .card:hover { border-color:var(--purple); }
+
+.split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.subsection { background:rgba(255,255,255,0.015); border:1px dashed var(--border); border-radius:8px; padding:10px 12px; }
+.sub-label  { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+
+.arrow { display:flex; justify-content:center; align-items:center; height:44px; position:relative; }
+.arrow::before { content:''; position:absolute; left:50%; top:0; bottom:0; width:1px; background:linear-gradient(to bottom,transparent,rgba(59,130,246,0.2),transparent); }
+.arrow-inner { z-index:1; background:var(--bg); padding:2px 14px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.arrow-chevron { color:var(--blue); font-size:18px; line-height:1; }
+.arrow-text    { font-size:9px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; }
+
+.url-chip { display:inline-flex; align-items:center; gap:6px; background:rgba(6,182,212,0.07); border:1px solid rgba(6,182,212,0.2); border-radius:6px; padding:5px 10px; font-size:10px; color:var(--cyan); margin-bottom:12px; }
+.live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; box-shadow:0 0 6px var(--green); animation:blink 1.6s infinite; }
+
+.adapter-flow { display:flex; align-items:stretch; background:var(--surface3); border:1px solid var(--border); border-radius:10px; overflow:hidden; flex-wrap:wrap; }
+.af-step { flex:1; min-width:140px; padding:12px 14px; border-right:1px solid var(--border); }
+.af-step:last-child { border-right:none; }
+.af-num    { font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+.af-title  { font-size:11px; font-weight:700; color:var(--cyan); margin-bottom:4px; }
+.af-detail { font-size:10px; color:var(--muted2); line-height:1.4; }
+
+.siem-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.siem-card { border-radius:10px; padding:16px 18px; border:1px solid; }
+.siem-dd   { border-color:rgba(99,102,241,0.35);  background:rgba(99,102,241,0.05); }
+.siem-tp   { border-color:rgba(236,72,153,0.35);   background:rgba(236,72,153,0.05); }
+.siem-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:8px; }
+.siem-dd .siem-name { color:#818cf8; }
+.siem-tp .siem-name { color:var(--pink); }
+.tag { display:inline-block; font-size:10px; padding:3px 8px; border-radius:4px; border:1px solid currentColor; margin:3px 3px 0 0; opacity:0.75; }
+.siem-dd .tag { color:#818cf8; } .siem-tp .tag { color:var(--pink); }
+
+.legend { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:40px; padding-top:22px; border-top:1px solid var(--border); }
+.legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted2); }
+.ldot { width:8px; height:8px; border-radius:50%; }
+
+/* ── Design Patterns ── */
+.dp-block { display:flex; gap:20px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:14px; }
+.dp-num   { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; color:var(--border); line-height:1; flex-shrink:0; width:48px; }
+.dp-inner { flex:1; min-width:0; }
+.dp-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:8px; }
+.dp-desc  { font-size:11px; color:var(--muted2); line-height:1.7; margin-bottom:16px; }
+
+.dpflow { display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex-wrap:wrap; }
+.dpflow-box { flex:1; min-width:130px; padding:14px; border-right:1px solid var(--border); }
+.dpflow-box:last-child { border-right:none; }
+.dpflow-label { font-size:11px; font-weight:700; margin-bottom:8px; }
+.dpflow-items { display:flex; flex-direction:column; gap:3px; }
+.dpflow-items span { font-size:10px; color:var(--muted2); padding:2px 0; border-bottom:1px solid var(--border-soft); }
+.dpflow-items span:last-child { border-bottom:none; }
+
+.afs-box    { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.afs-header { background:var(--surface3); padding:10px 14px; border-bottom:1px solid var(--border); font-size:11px; display:flex; align-items:center; gap:8px; }
+.afs-body   { padding:14px; display:flex; flex-direction:column; }
+.afs-part   { border:1px solid; border-radius:8px; padding:12px 14px; }
+.afs-connector { text-align:center; color:var(--muted); font-size:18px; padding:6px 0; }
+.afs-part-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.afs-code   { font-size:11px; color:var(--text); line-height:1.8; white-space:pre-wrap; font-family:'JetBrains Mono',monospace; }
+.afs-cm     { color:var(--muted2); }
+
+.dp-table   { width:100%; border-collapse:collapse; font-size:11px; }
+.dp-table th { background:var(--surface3); color:var(--muted2); padding:10px 14px; text-align:left; font-size:10px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+.dp-table td { padding:10px 14px; border-bottom:1px solid var(--border-soft); color:var(--text); vertical-align:top; }
+.dp-table tr:last-child td { border-bottom:none; }
+.dp-table tr:hover td { background:rgba(255,255,255,0.02); }
+.dp-table code { background:var(--surface3); padding:2px 6px; border-radius:4px; color:var(--cyan); font-size:10px; }
+
+.reasons { display:flex; flex-direction:column; gap:10px; }
+.reason  { display:flex; gap:12px; align-items:flex-start; background:var(--surface2); border:1px solid var(--border-soft); border-radius:8px; padding:12px 14px; }
+.reason-icon  { font-size:18px; flex-shrink:0; }
+.reason-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.reason-desc  { font-size:10px; color:var(--muted2); line-height:1.6; }
+.reason-desc code { background:var(--surface3); padding:1px 5px; border-radius:3px; color:var(--cyan); font-size:10px; }
+
+.mw-diagram { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.mw-box     { border-radius:10px; padding:14px 16px; text-align:center; border:1px solid; flex:1; min-width:110px; }
+.mw-master  { border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.06); }
+.mw-worker  { border-color:rgba(59,130,246,0.3);  background:rgba(59,130,246,0.05); }
+.mw-icon    { font-size:20px; margin-bottom:6px; }
+.mw-label   { font-size:11px; font-weight:700; margin-bottom:4px; color:var(--text); }
+.mw-detail  { font-size:10px; color:var(--muted2); line-height:1.5; }
+.mw-sep     { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.mw-line    { width:24px; height:1px; background:var(--border); }
+.mw-workers { display:flex; flex-direction:column; gap:8px; flex:2; }
+
+/* ── Folder Structure ── */
+.fs-grid { display:grid; grid-template-columns:1fr 1fr; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.fs-grid-header { grid-column:1/-1; background:var(--surface3); padding:12px 18px; border-bottom:1px solid var(--border); font-size:12px; display:flex; align-items:center; gap:10px; }
+.fs-grid-header-right { margin-left:auto; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
+
+.fs-folder { padding:18px 20px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); }
+.fs-folder:nth-child(even)      { border-right:none; }
+.fs-folder:nth-last-child(-n+2) { border-bottom:none; }
+
+.fs-folder-head { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; margin-bottom:6px; flex-wrap:wrap; }
+.fs-folder-desc { font-size:10px; color:var(--muted2); line-height:1.6; margin-bottom:12px; padding-bottom:10px; border-bottom:1px dashed var(--border); }
+.fs-tree { display:flex; flex-direction:column; gap:5px; }
+.fs-row  { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+.fs-indent { padding-left:18px; }
+.fs-sym  { font-size:11px; color:var(--muted); flex-shrink:0; }
+.fs-dir  { font-size:11px; font-weight:600; flex-shrink:0; }
+.fs-file { font-size:10px; color:var(--muted2); }
+
+.principles-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.principle { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.p-icon    { font-size:20px; margin-bottom:8px; }
+.p-title   { font-size:12px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.p-desc    { font-size:10px; color:var(--muted2); line-height:1.6; }
+
+/* ── Layer animation ── */
+.layer { animation:fadeUp 0.45s ease both; }
+.layer:nth-child(1){animation-delay:0.05s} .layer:nth-child(2){animation-delay:0.10s}
+.layer:nth-child(3){animation-delay:0.15s} .layer:nth-child(4){animation-delay:0.20s}
+.layer:nth-child(5){animation-delay:0.25s} .layer:nth-child(6){animation-delay:0.30s}
+.layer:nth-child(7){animation-delay:0.35s} .layer:nth-child(8){animation-delay:0.40s}
+.layer:nth-child(9){animation-delay:0.45s}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .split,.siem-grid,.principles-grid,.fs-grid { grid-template-columns:1fr; }
+  .mw-diagram,.dpflow { flex-direction:column; }
+  .fs-folder { border-right:none; }
+  .fs-folder:nth-last-child(-n+2){ border-bottom:1px solid var(--border); }
+  .fs-folder:last-child{ border-bottom:none; }
+  .dp-block { flex-direction:column; }
+  .dp-num   { font-size:24px; width:auto; }
+  .dpflow-box { border-right:none; border-bottom:1px solid var(--border); }
+  .dpflow-box:last-child { border-bottom:none; }
+  .af-step { border-right:none; border-bottom:1px solid var(--border); }
+  .af-step:last-child { border-bottom:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════════════════════════════
+     SECTION 1 — ARCHITECTURE
+════════════════════════════════════ -->
+<header style="text-align:center;margin-bottom:48px;animation:fadeDown 0.5s ease both">
+  <span class="eyebrow">System Architecture · v3</span>
+  <h1 class="section-title">Observability Performance Testing Framework</h1>
+  <p class="section-sub">Pre-setup → Developer triggers → K8s Locust pods → Akamai Infra → SIEMs</p>
+</header>
+
+<div style="display:flex;flex-direction:column;gap:0">
+
+  <div class="layer">
+    <div class="phase-label">① Pre-Setup Phase — done once before load is triggered</div>
+    <div class="block block-pre">
+      <div class="block-title">🔑 Cert Generation &amp; Subscription Creation <span class="badge badge-yellow">One-time Setup</span></div>
+      <div class="split">
+        <div class="subsection">
+          <div class="sub-label">cert_generator.py</div>
+          <div class="cards" style="grid-template-columns:1fr">
+            <div class="card"><div class="card-name">Generate mTLS Certs</div><div class="card-detail">Creates per-tenant .crt + .key signed by rootx CA. Saves names to list_of_tenants.txt</div></div>
+          </div>
+        </div>
+        <div class="subsection">
+          <div class="sub-label">*_subscription_pod_operations.py</div>
+          <div class="cards" style="grid-template-columns:1fr">
+            <div class="card"><div class="card-name">Create Subscriptions</div><div class="card-detail">POSTs to streammgr-server to register each tenant → tells Akamai where to forward logs/metrics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">⚠️ Prerequisites. Without certs and subscriptions, the adapters cannot authenticate or route traffic correctly.</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-inner"><span class="arrow-chevron">↓</span><span class="arrow-text">setup complete</span></div></div>
+
+  <div class="layer">
+    <div class="phase-label">② Developer Triggers Load</div>
+    <div class="block block-dev">
+      <div class="block-title">👩‍💻 4 Kubernetes Exposed Links — Locust UI <span class="badge badge-green">Dev Access</span></div>
+      <div class="cards">
+        <div class="card"><div class="card-name">DD Logs UI</div><div class="card-detail">Locust master UI for Datadog log scenario</div></div>
+        <div class="card"><div class="card-name">DD Metrics UI</div><div class="card-detail">Locust master UI for Datadog metrics scenario</div></div>
+        <div class="card"><div class="card-name">TP Logs UI</div><div class="card-detail">Locust master UI for TrafficPeak log scenario</div></div>
+        <div class="card"><div class="card-name">TP Metrics UI</div><div class="card-detail">Locust master UI for TrafficPeak metrics scenario</div></div>
+      </div>
+      <div class="note">Developer opens a link → sets users &amp; spawn rate → clicks Start. No infra knowledge needed.</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-inner"><span class="arrow-chevron">↓</span><span class="arrow-text">spawns workers</span></div></div>
+
+  <div class="layer">
+    <div class="phase-label">③ Kubernetes Cluster — Master / Worker + Locust Adapters</div>
+    <div class="block block-k8s">
+      <div class="block-title">☸ K8s Pods running Locust Adapters <span class="badge badge-blue">Scalable Workers</span></div>
+      <div class="split" style="margin-bottom:14px">
+        <div class="subsection">
+          <div class="sub-label">Datadog Pods</div>
+          <div class="cards" style="grid-template-columns:1fr 1fr">
+            <div class="card"><div class="card-name">DD Logs</div><div class="card-detail">Master + N workers · logs_locust_datadog.py</div></div>
+            <div class="card"><div class="card-name">DD Metrics</div><div class="card-detail">Master + N workers · metrics_locust_datadog.py</div></div>
+          </div>
+        </div>
+        <div class="subsection">
+          <div class="sub-label">TrafficPeak Pods</div>
+          <div class="cards" style="grid-template-columns:1fr 1fr">
+            <div class="card"><div class="card-name">TP Logs</div><div class="card-detail">Master + N workers · logs_locust_trafficpeak.py</div></div>
+            <div class="card"><div class="card-name">TP Metrics</div><div class="card-detail">Master + N workers · metrics_locust_trafficpeak.py</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-label" style="margin-bottom:8px">What each adapter does per request</div>
+      <div class="adapter-flow">
+        <div class="af-step"><div class="af-num">step 1</div><div class="af-title">Load Tenant Config</div><div class="af-detail">Reads tenant name + cert paths from shared_config</div></div>
+        <div class="af-step"><div class="af-num">step 2</div><div class="af-title">Manipulate Payload</div><div class="af-detail">modify_payload() injects timestamp, IP, tenant ID (logs) or builds InfluxDB line protocol (metrics)</div></div>
+        <div class="af-step"><div class="af-num">step 3</div><div class="af-title">Attach Cert + Header</div><div class="af-detail">Per-tenant .crt/.key for mTLS + X-HTTP-TENANT-ID header</div></div>
+        <div class="af-step"><div class="af-num">step 4</div><div class="af-title">POST Request</div><div class="af-detail">HTTP POST to Akamai at configured RPS via constant_pacing</div></div>
+      </div>
+      <div class="note">Each worker runs one Locust class per tenant — dynamically created at startup. All run concurrently for true parallel load.</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-inner"><span class="arrow-chevron">↓</span><span class="arrow-text">HTTPS POST · mTLS · per-tenant cert</span></div></div>
+
+  <div class="layer">
+    <div class="phase-label">④ Akamai K8s Metrics Infrastructure (Staging)</div>
+    <div class="block block-infra">
+      <div class="block-title">🌐 Logs / Metrics Receiver</div>
+      <div class="url-chip"><span class="live-dot"></span>[INTERNAL ENDPOINT]</div>
+      <div class="cards">
+        <div class="card"><div class="card-name">Logs Receiver · /logs</div><div class="card-detail">Accepts high-concurrency log POST requests</div></div>
+        <div class="card"><div class="card-name">Metrics Receiver · /telegraf</div><div class="card-detail">Accepts InfluxDB line-protocol payloads</div></div>
+        <div class="card"><div class="card-name">mTLS Auth</div><div class="card-detail">Validates per-tenant client cert signed by rootx CA</div></div>
+        <div class="card"><div class="card-name">Tenant Routing</div><div class="card-detail">Routes to correct SIEM based on subscription config</div></div>
+      </div>
+      <div class="note">This is the real system under test. Locust measures latency &amp; error rate here. Data is forwarded to the registered SIEM.</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-inner"><span class="arrow-chevron">↓</span><span class="arrow-text">forwarded per subscription config</span></div></div>
+
+  <div class="layer">
+    <div class="phase-label">⑤ SIEM Platforms — Where Data Gets Plotted</div>
+    <div class="block block-siem">
+      <div class="block-title">📊 Datadog &amp; TrafficPeak</div>
+      <div class="siem-grid">
+        <div class="siem-card siem-dd">
+          <div class="siem-name">Datadog</div>
+          <span class="tag">Logs Dashboard</span><span class="tag">Metrics Dashboard</span><span class="tag">Alerts</span><span class="tag">datadog_v1 sink</span>
+        </div>
+        <div class="siem-card siem-tp">
+          <div class="siem-name">TrafficPeak</div>
+          <span class="tag">Logs Dashboard</span><span class="tag">Metrics Dashboard</span><span class="tag">Alerts</span><span class="tag">traffic_peak sink</span>
+        </div>
+      </div>
+      <div class="note">🎯 Goal: validate that under peak load, both SIEMs receive, parse, and visualise all events with no data loss or unacceptable latency.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="ldot" style="background:var(--yellow)"></div>Pre-Setup</div>
+  <div class="legend-item"><div class="ldot" style="background:var(--green)"></div>Dev Trigger</div>
+  <div class="legend-item"><div class="ldot" style="background:var(--blue)"></div>K8s + Adapters</div>
+  <div class="legend-item"><div class="ldot" style="background:var(--orange)"></div>Akamai Infra (SUT)</div>
+  <div class="legend-item"><div class="ldot" style="background:var(--purple)"></div>SIEMs</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════
+     SECTION 2 — DESIGN PATTERNS
+════════════════════════════════════ -->
+<div class="section-header">
+  <span class="eyebrow">Design Patterns Applied</span>
+  <h2 class="section-title">Framework Architecture Patterns</h2>
+  <p class="section-sub">Patterns used across the adapter, infrastructure, and configuration layers</p>
+</div>
+
+<!-- 01 -->
+<div class="dp-block">
+  <div class="dp-num">01</div>
+  <div class="dp-inner">
+    <div class="dp-title" style="color:var(--cyan)">Adapter Pattern</div>
+    <div class="dp-desc">Locust is a generic load engine — it has no idea what a log or metric payload looks like. The adapter sits in the middle and translates Locust's task trigger into exactly what the target API expects.</div>
+    <div class="dpflow">
+      <div class="dpflow-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.3)">
+        <div class="dpflow-label" style="color:var(--blue)">Locust Engine</div>
+        <div class="dpflow-items"><span>knows RPS</span><span>spawns users</span><span>fires @task</span></div>
+      </div>
+      <div class="dpflow-box" style="background:rgba(6,182,212,0.08);border-color:rgba(6,182,212,0.4)">
+        <div class="dpflow-label" style="color:var(--cyan)">Adapter Layer</div>
+        <div class="dpflow-items"><span>modify_payload()</span><span>attach cert</span><span>set headers</span><span>pick protocol</span></div>
+      </div>
+      <div class="dpflow-box" style="background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.3)">
+        <div class="dpflow-label" style="color:var(--orange)">Target API</div>
+        <div class="dpflow-items"><span>Akamai endpoint</span><span>POST /logs → JSON</span><span>POST /telegraf → InfluxDB</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 -->
+<div class="dp-block">
+  <div class="dp-num">02</div>
+  <div class="dp-inner">
+    <div class="dp-title" style="color:var(--blue)">Adapter File Structure</div>
+    <div class="dp-desc">Every adapter file follows the same 3-part structure. Add a new platform? Create a new file with the same shape — nothing else changes.</div>
+    <div class="afs-box">
+      <div class="afs-header"><span>📄</span><span style="color:var(--cyan)">logs_locust_datadog.py</span></div>
+      <div class="afs-body">
+        <div class="afs-part" style="border-color:rgba(234,179,8,0.3);background:rgba(234,179,8,0.04)">
+          <div class="afs-part-label" style="color:var(--yellow)">Part 1 — Config Provider</div>
+          <div class="afs-code">class Config:
+    reads tenant file, template, RPS, cert paths
+
+CONFIG = Config()  <span class="afs-cm"># singleton — created once at startup</span></div>
+        </div>
+        <div class="afs-connector">↓</div>
+        <div class="afs-part" style="border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.04)">
+          <div class="afs-part-label" style="color:var(--cyan)">Part 2 — Base Locust Class (Template Method)</div>
+          <div class="afs-code">class BaseLogsUser(HttpUser):
+    tenant = None  <span class="afs-cm"># ← variable slot, filled by factory</span>
+
+    def on_start():   <span class="afs-cm"># load cert + headers — runs once per instance</span>
+
+    @task
+    def send_log():   <span class="afs-cm"># modify payload → POST request</span></div>
+        </div>
+        <div class="afs-connector">↓</div>
+        <div class="afs-part" style="border-color:rgba(139,92,246,0.3);background:rgba(139,92,246,0.04)">
+          <div class="afs-part-label" style="color:var(--purple)">Part 3 — Factory Class Creator</div>
+          <div class="afs-code">for tenant in TENANTS:
+    type(class_name, (BaseLogsUser,), {"tenant": tenant})
+
+<span class="afs-cm"># stamps 1 unique class per tenant at startup</span>
+<span class="afs-cm"># all sit in memory until the test stops</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 03 -->
+<div class="dp-block">
+  <div class="dp-num">03</div>
+  <div class="dp-inner">
+    <div class="dp-title" style="color:var(--green)">Template Method Pattern</div>
+    <div class="dp-desc">The base Locust class defines the fixed algorithm — <em>how</em> to send. The tenant is the only variable — <em>who</em> is sending. Each generated subclass inherits the full algorithm but plugs in a different tenant identity.</div>
+    <div style="overflow-x:auto">
+      <table class="dp-table">
+        <thead><tr><th>Template Method Concept</th><th>Your Code</th></tr></thead>
+        <tbody>
+          <tr><td>Abstract base class</td><td><code>BaseLogsUser / BaseMetricsUser</code></td></tr>
+          <tr><td>Fixed algorithm skeleton</td><td><code>on_start()</code> + <code>@task send_log()</code></td></tr>
+          <tr><td>Variable / hook part</td><td><code>tenant = None</code> — overridden per class</td></tr>
+          <tr><td>Concrete subclasses</td><td>Dynamically generated per tenant at startup</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 04 -->
+<div class="dp-block">
+  <div class="dp-num">04</div>
+  <div class="dp-inner">
+    <div class="dp-title" style="color:var(--purple)">Factory Pattern</div>
+    <div class="dp-desc">100 tenants, each with different certs and config. Writing one class manually per tenant is not an option. The factory reads the tenant list at startup and manufactures all classes in one go.</div>
+    <div class="reasons">
+      <div class="reason">
+        <div class="reason-icon">⚡</div>
+        <div>
+          <div class="reason-title">Cert reloading is expensive</div>
+          <div class="reason-desc">Each tenant has a unique .crt + .key. Reloading on every request at 100 RPS is wasteful. <code>on_start()</code> loads it once per instance and reuses it.</div>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="reason-icon">⚖️</div>
+        <div>
+          <div class="reason-title">Locust scales per user class</div>
+          <div class="reason-desc">With 1 class for all tenants you lose per-tenant RPS control. 1 class per tenant = Locust distributes workers independently per tenant.</div>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="reason-icon">🏭</div>
+        <div>
+          <div class="reason-title">type() manufactures classes at runtime</div>
+          <div class="reason-desc">100 tenants in <code>list_of_tenants.txt</code> → 100 unique Locust classes stamped at startup → all sit in memory until the test stops.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 05 -->
+<div class="dp-block">
+  <div class="dp-num">05</div>
+  <div class="dp-inner">
+    <div class="dp-title" style="color:var(--orange)">Master-Worker Architecture</div>
+    <div class="dp-desc">At the infrastructure level, Locust runs in a distributed master-worker model on Kubernetes. One master coordinates and reports; N workers generate concurrent load independently.</div>
+    <div class="mw-diagram">
+      <div class="mw-box mw-master">
+        <div class="mw-icon">👑</div>
+        <div class="mw-label">Master Pod</div>
+        <div class="mw-detail">Hosts Locust UI · coordinates workers · aggregates results</div>
+      </div>
+      <div class="mw-sep"><div class="mw-line"></div><div class="mw-line"></div><div class="mw-line"></div></div>
+      <div class="mw-workers">
+        <div class="mw-box mw-worker"><div class="mw-icon">⚙️</div><div class="mw-label">Worker 1</div><div class="mw-detail">runs tenant classes · fires requests</div></div>
+        <div class="mw-box mw-worker"><div class="mw-icon">⚙️</div><div class="mw-label">Worker 2</div><div class="mw-detail">runs tenant classes · fires requests</div></div>
+        <div class="mw-box mw-worker"><div class="mw-icon">⚙️</div><div class="mw-label">Worker N</div><div class="mw-detail">runs tenant classes · fires requests</div></div>
+      </div>
+    </div>
+    <div class="note">4 separate master-worker clusters run in parallel — DD Logs, DD Metrics, TP Logs, TP Metrics — each scaling independently.</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════
+     SECTION 3 — FOLDER STRUCTURE
+════════════════════════════════════ -->
+<div class="section-header">
+  <span class="eyebrow">Project Layout</span>
+  <h2 class="section-title">File &amp; Folder Structure</h2>
+  <p class="section-sub">Separation of concerns across 4 top-level folders — each with one job</p>
+</div>
+
+<div class="fs-grid">
+  <div class="fs-grid-header">
+    <span>📁</span>
+    <span style="color:var(--cyan)">observabilityperformance/</span>
+    <span class="fs-grid-header-right">root</span>
+  </div>
+
+  <div class="fs-folder">
+    <div class="fs-folder-head"><span>📂</span><span style="color:var(--cyan)">adapters/</span><span class="badge badge-cyan">Load Generation</span></div>
+    <div class="fs-folder-desc">Locust adapter files — what runs inside K8s pods to generate load</div>
+    <div class="fs-tree">
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">access_logs/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">logs_locust_datadog.py</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">logs_locust_trafficpeak.py</span></div>
+      <div class="fs-row"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--blue)">metrics/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">metrics_locust_datadog.py</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">metrics_locust_trafficpeak.py</span></div>
+    </div>
+  </div>
+
+  <div class="fs-folder">
+    <div class="fs-folder-head"><span>📂</span><span style="color:var(--green)">utility/</span><span class="badge badge-green">Pre-Setup Helpers</span></div>
+    <div class="fs-folder-desc">One-time operations run before load — cert generation, subscriptions, payload helpers</div>
+    <div class="fs-tree">
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-file" style="color:var(--yellow)">cert_generator.py</span></div>
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">access_logs/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-file">logs_utility.py</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">dd_logs_subscription_pod_operations.py</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">tp_logs_subscription_pod_operations.py</span></div>
+      <div class="fs-row"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--blue)">metrics/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">dd_metrics_subscription_pod_operations.py</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">tp_metrics_subscription_pod_operations.py</span></div>
+    </div>
+  </div>
+
+  <div class="fs-folder">
+    <div class="fs-folder-head"><span>📂</span><span style="color:var(--orange)">data/</span><span class="badge badge-orange">Static Inputs</span></div>
+    <div class="fs-folder-desc">Config files, payload templates, tenant lists, mTLS certs — no logic, only inputs</div>
+    <div class="fs-tree">
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">common/</span><span class="fs-file">rootx.cert · rootx.key · cacert.pem</span></div>
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">access_logs/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">shared_config · template.json · tenants.txt</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">shared_config · template.json · tenants.txt</span></div>
+      <div class="fs-row"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--blue)">metrics/</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--muted2)">datadog/</span><span class="fs-file">shared_config · agent_names.txt</span></div>
+      <div class="fs-row fs-indent"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--muted2)">traffic_peak/</span><span class="fs-file">shared_config · agent_names.txt</span></div>
+    </div>
+  </div>
+
+  <div class="fs-folder">
+    <div class="fs-folder-head"><span>📂</span><span style="color:var(--blue)">k8s/</span><span class="badge badge-blue">Infra Manifests</span></div>
+    <div class="fs-folder-desc">Kubernetes YAML files — one master + worker deployment per scenario, plus shared ingress</div>
+    <div class="fs-tree">
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-file">common-ingress.yaml</span></div>
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">datadog-logs/</span><span class="fs-file">master · master-svc · worker</span></div>
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">datadog-metrics/</span><span class="fs-file">master · master-svc · worker</span></div>
+      <div class="fs-row"><span class="fs-sym">├──</span><span class="fs-dir" style="color:var(--blue)">trafficpeak-logs/</span><span class="fs-file">master · master-svc · worker</span></div>
+      <div class="fs-row"><span class="fs-sym">└──</span><span class="fs-dir" style="color:var(--blue)">trafficpeak-metrics/</span><span class="fs-file">master · master-svc · worker</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="principles-grid">
+  <div class="principle"><div class="p-icon">🔀</div><div class="p-title">Separation of Concerns</div><div class="p-desc">Each folder has exactly one job. Adapters only know about load generation. Utility only handles pre-setup. Data only holds static inputs. Nothing bleeds into each other.</div></div>
+  <div class="principle"><div class="p-icon">🔓</div><div class="p-title">Open / Closed Principle</div><div class="p-desc">Adding a new platform means adding one folder in each of the 4 places. No existing files are touched. Open for extension, closed for modification.</div></div>
+  <div class="principle"><div class="p-icon">🧭</div><div class="p-title">Discoverability</div><div class="p-desc">Any developer can navigate to exactly what they need without reading code. Datadog logs config? → data/access_logs/datadog/. TrafficPeak K8s? → k8s/trafficpeak-logs/.</div></div>
+  <div class="principle"><div class="p-icon">🔁</div><div class="p-title">Consistency</div><div class="p-desc">Every platform follows the identical folder naming convention — logs vs metrics, then platform name. Same pattern repeated across all 4 top-level folders.</div></div>
+</div>
+
+</div><!-- /wrap -->
+</body>
+</html>

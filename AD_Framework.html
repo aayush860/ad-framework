@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EAA Directory Automation — Framework Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0b0d12;
+  --bg2:      #10131a;
+  --bg3:      #161a24;
+  --bg4:      #1c2030;
+  --border:   #222636;
+  --border2:  #2a2f45;
+
+  --s1: #ff6b35;   /* framework */
+  --s2: #00d4aa;   /* design patterns */
+  --s3: #4d9fff;   /* folder structure */
+  --s4: #c77dff;   /* e2e flow */
+
+  --text:  #e2e6f3;
+  --mid:   #8890b0;
+  --dim:   #454a65;
+
+  --good:  #4fffb0;
+  --warn:  #ffcc44;
+  --bad:   #ff5577;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* ── SIDEBAR NAV ── */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 220px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.sidebar-brand .sb-eyebrow {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+
+.sidebar-brand .sb-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--mid);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+  position: relative;
+}
+
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+.nav-item.s1 { --c: var(--s1); }
+.nav-item.s2 { --c: var(--s2); }
+.nav-item.s3 { --c: var(--s3); }
+.nav-item.s4 { --c: var(--s4); }
+
+.nav-item.active {
+  color: var(--c);
+  border-left-color: var(--c);
+  background: rgba(255,255,255,0.03);
+}
+
+.nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--c, var(--dim));
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.nav-item.active .nav-dot { opacity: 1; }
+
+.nav-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  margin-left: auto;
+}
+
+/* ── MAIN CONTENT ── */
+.content {
+  margin-left: 220px;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 60px 56px 48px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--bg) 0%, #0e1020 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(77,159,255,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--s3);
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-size: clamp(26px, 4vw, 44px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+}
+
+.hero h1 span { color: var(--s3); }
+
+.hero p {
+  color: var(--mid);
+  font-size: 15px;
+  max-width: 600px;
+  font-weight: 300;
+  margin-bottom: 28px;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-tag {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+/* ── SECTIONS ── */
+.section {
+  padding: 56px 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-child { border-bottom: none; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 36px;
+}
+
+.section-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.section-meta { flex: 1; }
+
+.section-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.section-title {
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.section-sub {
+  color: var(--mid);
+  font-size: 14px;
+  margin-top: 8px;
+  font-weight: 300;
+}
+
+/* section color theming */
+.s1-theme .section-num  { background: rgba(255,107,53,0.12); color: var(--s1); }
+.s1-theme .section-label { color: var(--s1); }
+.s1-theme .section-title { color: var(--text); }
+
+.s2-theme .section-num  { background: rgba(0,212,170,0.12); color: var(--s2); }
+.s2-theme .section-label { color: var(--s2); }
+
+.s3-theme .section-num  { background: rgba(77,159,255,0.12); color: var(--s3); }
+.s3-theme .section-label { color: var(--s3); }
+
+.s4-theme .section-num  { background: rgba(199,125,255,0.12); color: var(--s4); }
+.s4-theme .section-label { color: var(--s4); }
+
+/* ── CARDS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.card:hover { border-color: var(--border2); }
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.card.c1::before { background: var(--s1); }
+.card.c2::before { background: var(--s2); }
+.card.c3::before { background: var(--s3); }
+.card.c4::before { background: var(--s4); }
+.card.cg::before { background: var(--good); }
+.card.cw::before { background: var(--warn); }
+
+.card-icon { font-size: 22px; margin-bottom: 10px; }
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.card-body {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.6;
+}
+
+/* ── CODE BLOCKS ── */
+.code {
+  background: #060709;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 14px 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 12.5px;
+  line-height: 1.85;
+}
+
+.code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-bar .cb-name { font-size: 11px; color: var(--dim); }
+
+.code-bar .cb-lang {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.code pre { padding: 16px 18px; overflow-x: auto; color: var(--mid); }
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.str { color: #c3e88d; }
+.cm { color: #3a4060; font-style: italic; }
+.var { color: #ffcb6b; }
+.dec { color: var(--good); }
+.tag-r { color: var(--s2); }
+.hl { color: var(--text); font-weight: 500; }
+.num { color: #f78c6c; }
+
+/* ── INTERVIEW ANSWER BOX ── */
+.answer-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.answer-q {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.answer-q .aq-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.answer-a {
+  padding: 16px 20px;
+  font-size: 13.5px;
+  color: var(--mid);
+  line-height: 1.8;
+  font-style: italic;
+}
+
+.answer-a strong { color: var(--text); font-style: normal; }
+
+/* ── CALLOUT ── */
+.callout {
+  border-left: 3px solid;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-size: 13.5px;
+}
+
+.callout.tip   { border-color: var(--good); background: rgba(79,255,176,0.05); color: var(--mid); }
+.callout.warn  { border-color: var(--warn); background: rgba(255,204,68,0.05); color: var(--mid); }
+.callout.info  { border-color: var(--s3);   background: rgba(77,159,255,0.05); color: var(--mid); }
+
+.callout strong { color: var(--text); }
+
+/* ── TABLE ── */
+.tbl-wrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+  background: var(--bg3);
+  padding: 10px 16px;
+  text-align: left;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(34,38,54,0.6);
+  font-size: 13px;
+  color: var(--mid);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.015); }
+
+td:first-child { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--text); }
+
+.yes { color: var(--good); font-weight: 600; }
+.no  { color: var(--bad);  font-weight: 600; }
+.maybe { color: var(--warn); font-weight: 600; }
+
+/* ── LAYER DIAGRAM ── */
+.layer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.layer {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.layer:last-child { border-bottom: none; }
+.layer:hover { background: rgba(255,255,255,0.01); }
+
+.layer-tag {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.layer-content {
+  padding: 18px 22px;
+}
+
+.layer-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.lf-pill {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.layer-desc {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.5;
+}
+
+/* layer colors */
+.layer.l-test .layer-tag    { color: var(--s1); background: rgba(255,107,53,0.04); }
+.layer.l-test .lf-pill      { color: var(--s1); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.25); }
+.layer.l-util .layer-tag    { color: var(--s2); background: rgba(0,212,170,0.04); }
+.layer.l-util .lf-pill      { color: var(--s2); background: rgba(0,212,170,0.08); border-color: rgba(0,212,170,0.25); }
+.layer.l-api .layer-tag     { color: var(--s3); background: rgba(77,159,255,0.04); }
+.layer.l-api .lf-pill       { color: var(--s3); background: rgba(77,159,255,0.08); border-color: rgba(77,159,255,0.25); }
+.layer.l-data .layer-tag    { color: var(--s4); background: rgba(199,125,255,0.04); }
+.layer.l-data .lf-pill      { color: var(--s4); background: rgba(199,125,255,0.08); border-color: rgba(199,125,255,0.25); }
+
+/* ── PATTERN CARDS ── */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.pattern-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: border-color 0.2s;
+}
+
+.pattern-card:hover { border-color: var(--border2); }
+
+.pc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pc-num {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(0,212,170,0.12);
+  color: var(--s2);
+}
+
+.pc-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pc-body {
+  font-size: 13px;
+  color: var(--mid);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.pc-example {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--s2);
+  background: rgba(0,212,170,0.06);
+  border: 1px solid rgba(0,212,170,0.15);
+  border-radius: 5px;
+  padding: 8px 10px;
+  line-height: 1.6;
+}
+
+/* ── FOLDER TREE ── */
+.tree {
+  background: #060709;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 20px 22px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12.5px;
+  line-height: 2;
+  margin: 16px 0;
+}
+
+.t-root  { color: var(--text); font-weight: 600; }
+.t-dir   { color: var(--s3); }
+.t-test  { color: var(--s1); }
+.t-util  { color: var(--s2); }
+.t-api   { color: var(--s3); }
+.t-data  { color: var(--s4); }
+.t-cfg   { color: var(--warn); }
+.t-cm    { color: var(--dim); font-style: italic; margin-left: 12px; }
+
+/* ── FLOW DIAGRAM ── */
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 24px 0;
+}
+
+.flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.flow-box {
+  border-radius: 8px;
+  padding: 11px 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid transparent;
+  min-width: 180px;
+}
+
+.fb-j  { background: rgba(255,107,53,0.1);  border-color: rgba(255,107,53,0.3);  color: var(--s1); }
+.fb-d  { background: rgba(77,159,255,0.1);  border-color: rgba(77,159,255,0.3);  color: var(--s3); }
+.fb-r  { background: rgba(0,212,170,0.1);   border-color: rgba(0,212,170,0.3);   color: var(--s2); }
+.fb-p  { background: rgba(199,125,255,0.1); border-color: rgba(199,125,255,0.3); color: var(--s4); }
+.fb-q  { background: rgba(255,204,68,0.1);  border-color: rgba(255,204,68,0.3);  color: var(--warn); }
+.fb-rp { background: rgba(79,255,176,0.1);  border-color: rgba(79,255,176,0.3);  color: var(--good); }
+
+.flow-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--dim);
+  font-size: 16px;
+  margin: 2px 0;
+}
+
+.flow-arrow span {
+  width: 1px;
+  height: 10px;
+  background: var(--border2);
+  display: block;
+}
+
+.flow-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+.flow-side {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  padding: 6px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.flow-sep { color: var(--dim); font-size: 13px; }
+
+/* ── MINI HORIZONTAL FLOW ── */
+.hflow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.hf-node {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.hf-arr { color: var(--dim); font-size: 13px; }
+
+/* ── DIVIDER ── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  margin: 28px 0;
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+footer {
+  margin-left: 220px;
+  padding: 20px 56px;
+  border-top: 1px solid var(--border);
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .content, footer { margin-left: 0; }
+  .section { padding: 36px 24px; }
+  .hero { padding: 40px 24px; }
+  .layer { grid-template-columns: 1fr; }
+  .layer-tag { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sb-eyebrow">Framework Overview</div>
+    <div class="sb-title">EAA Directory<br>Automation</div>
+  </div>
+  <a href="#s1" class="nav-item s1 active"><div class="nav-dot"></div>Framework Used<span class="nav-num">01</span></a>
+  <a href="#s2" class="nav-item s2"><div class="nav-dot"></div>Design Patterns<span class="nav-num">02</span></a>
+  <a href="#s3" class="nav-item s3"><div class="nav-dot"></div>File & Folder<span class="nav-num">03</span></a>
+  <a href="#s4" class="nav-item s4"><div class="nav-dot"></div>End-to-End Flow<span class="nav-num">04</span></a>
+</nav>
+
+<!-- MAIN -->
+<div class="content">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">EAA · Directory Integration Test Automation</div>
+  <h1>Test Automation<br><span>Framework Overview</span></h1>
+  <p>Architecture, design patterns, folder structure, and end-to-end execution flow of the EAA directory integration test framework.</p>
+  <div class="hero-tags">
+    <div class="hero-tag" style="color:var(--s1); border-color:rgba(255,107,53,0.3); background:rgba(255,107,53,0.08)">pytest</div>
+    <div class="hero-tag" style="color:var(--s2); border-color:rgba(0,212,170,0.3); background:rgba(0,212,170,0.08)">Robot Framework</div>
+    <div class="hero-tag" style="color:var(--s3); border-color:rgba(77,159,255,0.3); background:rgba(77,159,255,0.08)">Docker</div>
+    <div class="hero-tag" style="color:var(--s4); border-color:rgba(199,125,255,0.3); background:rgba(199,125,255,0.08)">Jenkins</div>
+    <div class="hero-tag" style="color:var(--warn); border-color:rgba(255,204,68,0.3); background:rgba(255,204,68,0.08)">QASE</div>
+    <div class="hero-tag" style="color:var(--good); border-color:rgba(79,255,176,0.3); background:rgba(79,255,176,0.08)">Active Directory · LDAP · AD LDS</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECTION 1 — FRAMEWORK USED
+══════════════════════════════════════════ -->
+<div class="section s1-theme" id="s1">
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <div class="section-meta">
+      <div class="section-label">Section 1</div>
+      <div class="section-title">Framework Used</div>
+      <div class="section-sub">What technologies power the framework and why</div>
+    </div>
+  </div>
+
+  <!-- Core framework -->
+  <div class="card-grid">
+    <div class="card c1">
+      <div class="card-icon">🧪</div>
+      <div class="card-title">pytest — Primary Test Framework</div>
+      <div class="card-body">All test logic is written in Python using pytest conventions. Class-based tests, setup/teardown lifecycle, assert statements. This is the engine.</div>
+    </div>
+    <div class="card c2">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Robot Framework — Reporting Only</div>
+      <div class="card-body">.robot files wrap the pytest classes purely for Jenkins reporting and tag-based test filtering. Zero test logic lives here.</div>
+    </div>
+    <div class="card c3">
+      <div class="card-icon">🐳</div>
+      <div class="card-title">Docker — Environment Isolation</div>
+      <div class="card-body">Fresh image built every Jenkins run. Ensures clean, identical environment regardless of which Jenkins agent picks up the job.</div>
+    </div>
+    <div class="card c4">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">Jenkins — CI Orchestration</div>
+      <div class="card-body">Triggers test runs. Injects parameters as environment variables. Displays Robot HTML reports and trend graphs. Webhook triggered on environment upgrades.</div>
+    </div>
+  </div>
+
+  <!-- Tech stack table -->
+  <div class="tbl-wrap" style="margin-top:24px">
+    <table>
+      <thead>
+        <tr><th>Tool</th><th>Role</th><th>Why this tool</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>pytest</td>
+          <td style="color:var(--text)">Test framework</td>
+          <td>Industry standard Python test framework. Class-based structure, fixtures, rich assertion support.</td>
+        </tr>
+        <tr>
+          <td>Robot Framework</td>
+          <td style="color:var(--text)">Reporting + tag filtering</td>
+          <td>Already established in team's Jenkins pipeline. Tags enable selective runs without code changes.</td>
+        </tr>
+        <tr>
+          <td>ldap3</td>
+          <td style="color:var(--text)">AD/LDAP operations</td>
+          <td>Directly create/modify users and groups in Active Directory from Python.</td>
+        </tr>
+        <tr>
+          <td>requests</td>
+          <td style="color:var(--text)">HTTP/API calls</td>
+          <td>All EAA REST API interactions and IDP login validation.</td>
+        </tr>
+        <tr>
+          <td>QASE</td>
+          <td style="color:var(--text)">Test management</td>
+          <td>Real-time result push via Robot listener. Tags map to QASE test case IDs (Q-473).</td>
+        </tr>
+        <tr>
+          <td>Docker</td>
+          <td style="color:var(--text)">Environment consistency</td>
+          <td>Eliminates "works on my machine" issues. Same Python version + packages every run.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECTION 2 — DESIGN PATTERNS
+══════════════════════════════════════════ -->
+<div class="section s2-theme" id="s2">
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <div class="section-meta">
+      <div class="section-label">Section 2</div>
+      <div class="section-title">Design Patterns Used</div>
+      <div class="section-sub">How the code is structured and why — the decisions behind the architecture</div>
+    </div>
+  </div>
+
+  <div class="pattern-grid">
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">1</div>
+        <div class="pc-name">Layered Architecture</div>
+      </div>
+      <div class="pc-body">The framework is split into 4 layers — Test, Utility, API, and Data. Each layer has one responsibility. Tests don't make API calls. Utilities don't contain test assertions. Clean separation throughout.</div>
+      <div class="pc-example">Test → Utility → API Layer → EAA<br>Each layer only talks to the one below it</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">2</div>
+        <div class="pc-name">API Object Pattern</div>
+      </div>
+      <div class="pc-body">All EAA REST calls go through Directory_Apis class. Tests never make raw HTTP calls. Same concept as Page Object Model in UI testing — but applied to APIs. If API changes, only apis.py updates.</div>
+      <div class="pc-example">test → dir_apis.sync_directory()<br>never → requests.post("/api/sync")</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">3</div>
+        <div class="pc-name">Data-Driven Testing</div>
+      </div>
+      <div class="pc-body">Test data is externalized to JSON config files. Config_Provider reads them at runtime. Dynamic values like connector name and environment injected as environment variables by Jenkins.</div>
+      <div class="pc-example">Directory_Config.json → Config_Provider<br>connector_name → os.environ.get()</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">4</div>
+        <div class="pc-name">Setup / Teardown Pattern</div>
+      </div>
+      <div class="pc-body">Two-level lifecycle management. Class level for expensive shared resources (directory, IDP — created once). Method level for per-test cleanup (delete groups, sync after each test).</div>
+      <div class="pc-example">setup_class → create dir + IDP (once)<br>teardown → delete groups (per test)</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">5</div>
+        <div class="pc-name">Utility / Helper Pattern</div>
+      </div>
+      <div class="pc-body">Complex reusable workflows live in utility classes. GenericUtils holds cross-directory workflows. ADutils holds AD-specific LDAP operations. Tests call these — no logic duplication.</div>
+      <div class="pc-example">generic_utils.create_sync_and_validate()<br>ad_utils.diff_sync_operations()</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">6</div>
+        <div class="pc-name">Factory Pattern</div>
+      </div>
+      <div class="pc-body">GenerateApis reads apis.json and dynamically creates API client methods at runtime. No need to manually write HTTP boilerplate for every endpoint. Add new API = update JSON only.</div>
+      <div class="pc-example">GenerateApis(json_path=apis.json)<br>→ auto generates all client methods</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">7</div>
+        <div class="pc-name">Retry / Polling Pattern</div>
+      </div>
+      <div class="pc-body">EAA sync is async — you can't assert immediately. Polling loops with configurable timeout and poll interval wait for the expected state before asserting. Used for directory verification, user sync, login validation.</div>
+      <div class="pc-example">wait_till_all_user_are_synced()<br>directory_verification() with retries</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pc-header">
+        <div class="pc-num">8</div>
+        <div class="pc-name">What Could Be Better</div>
+      </div>
+      <div class="pc-body" style="color:var(--bad)">generic_utils is a God Class — too many responsibilities. Test files are too large. No conftest.py — setup_class used instead of fixtures. No pytest markers — Robot tags used instead.</div>
+      <div class="pc-example" style="color:var(--bad); border-color:rgba(255,85,119,0.2); background:rgba(255,85,119,0.05)">Anti-pattern: God Class in generic_utils<br>Should split by responsibility</div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECTION 3 — FILE & FOLDER STRUCTURE
+══════════════════════════════════════════ -->
+<style>
+/* ── EXPLORER ── */
+.explorer-wrap {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 20px 0;
+  min-height: 480px;
+}
+
+.explorer-sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+.explorer-topbar {
+  padding: 8px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+
+.ex-section {
+  padding: 6px 0 2px;
+}
+
+.ex-section-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 14px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ex-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px 5px 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--mid);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  border-left: 2px solid transparent;
+}
+
+.ex-folder:hover { background: rgba(255,255,255,0.03); }
+
+.ex-folder.active {
+  background: rgba(77,159,255,0.06);
+  color: var(--text);
+  border-left-color: var(--s3);
+}
+
+.ex-folder .ef-icon { font-size: 13px; flex-shrink: 0; }
+
+.ex-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 36px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11.5px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+
+.ex-file:hover { color: var(--mid); background: rgba(255,255,255,0.02); }
+
+.ex-file.active {
+  color: var(--text);
+  background: rgba(77,159,255,0.05);
+  border-left-color: var(--s3);
+}
+
+.ex-file .ef-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* detail panel */
+.explorer-detail {
+  background: var(--bg);
+  padding: 28px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.detail-panel { display: none; }
+.detail-panel.active { display: block; }
+
+.dp-path {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dp-path span { color: var(--mid); }
+.dp-path span.cur { color: var(--s3); }
+
+.dp-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dp-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.dp-desc {
+  color: var(--mid);
+  font-size: 13.5px;
+  line-height: 1.7;
+  margin: 12px 0 18px;
+}
+
+.dp-files-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+
+.dp-file-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 16px;
+  padding: 10px 14px;
+  border-radius: 7px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  transition: border-color 0.15s;
+}
+
+.dp-file-row:hover { border-color: var(--border2); }
+
+.dp-file-name {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.dp-file-desc {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+.dp-file-tag {
+  font-family: 'Fira Code', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── LAYER PYRAMID ── */
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 20px 0;
+}
+
+.pyr-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+  cursor: default;
+}
+
+.pyr-row:hover { border-color: var(--border2); }
+
+.pyr-label {
+  padding: 16px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+  border-right: 1px solid var(--border);
+}
+
+.pyr-body {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.pyr-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.pyr-pill {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.pyr-desc {
+  font-size: 12.5px;
+  color: var(--dim);
+  max-width: 300px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.pyr-arrow {
+  text-align: center;
+  color: var(--dim);
+  font-size: 16px;
+  padding: 2px 0;
+}
+
+.pr-test  .pyr-label { color: var(--s1); background: rgba(255,107,53,0.07); }
+.pr-test  .pyr-pill  { color: var(--s1); background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.25); }
+.pr-util  .pyr-label { color: var(--s2); background: rgba(0,212,170,0.07); }
+.pr-util  .pyr-pill  { color: var(--s2); background: rgba(0,212,170,0.08); border-color: rgba(0,212,170,0.25); }
+.pr-api   .pyr-label { color: var(--s3); background: rgba(77,159,255,0.07); }
+.pr-api   .pyr-pill  { color: var(--s3); background: rgba(77,159,255,0.08); border-color: rgba(77,159,255,0.25); }
+.pr-data  .pyr-label { color: var(--s4); background: rgba(199,125,255,0.07); }
+.pr-data  .pyr-pill  { color: var(--s4); background: rgba(199,125,255,0.08); border-color: rgba(199,125,255,0.25); }
+</style>
+
+<div class="section s3-theme" id="s3">
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <div class="section-meta">
+      <div class="section-label">Section 3</div>
+      <div class="section-title">File & Folder Structure</div>
+      <div class="section-sub">Click any folder or file to explore what it does and why it exists</div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE EXPLORER -->
+  <div class="explorer-wrap">
+
+    <!-- LEFT SIDEBAR — file tree -->
+    <div class="explorer-sidebar">
+      <div class="explorer-topbar">📁 dyno project</div>
+
+      <!-- tests/ -->
+      <div class="ex-section">
+        <div class="ex-section-label" style="color:var(--s1)">
+          <span>📂</span> tests/
+        </div>
+
+        <div class="ex-folder active" onclick="showPanel('tests-ad')" id="f-tests-ad">
+          <span class="ef-icon">📁</span> active_directory/
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-main')" id="f-f-ad-main">
+          <div class="ef-dot" style="background:var(--s1)"></div> Test_Active_Directory.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-robot')" id="f-f-ad-robot">
+          <div class="ef-dot" style="background:var(--s2)"></div> Test_Active_Directory.robot
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-ldaps')" id="f-f-ad-ldaps">
+          <div class="ef-dot" style="background:var(--s1)"></div> Test_AD_LDAPS.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-gc')" id="f-f-ad-gc">
+          <div class="ef-dot" style="background:var(--s1)"></div> Test_AD_Global_Catalog.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-perf')" id="f-f-ad-perf">
+          <div class="ef-dot" style="background:var(--s1)"></div> Test_AD_Performance.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-ad-ver')" id="f-f-ad-ver">
+          <div class="ef-dot" style="background:var(--s1)"></div> TestDirectoryVersioning.py
+        </div>
+
+        <div class="ex-folder" onclick="showPanel('tests-ldap')" id="f-tests-ldap" style="margin-top:4px">
+          <span class="ef-icon">📁</span> ldap/
+        </div>
+
+        <div class="ex-folder" onclick="showPanel('tests-adlds')" id="f-tests-adlds">
+          <span class="ef-icon">📁</span> ad_lds/
+        </div>
+
+        <div class="ex-folder" onclick="showPanel('tests-config')" id="f-tests-config">
+          <span class="ef-icon">📁</span> Config/
+        </div>
+        <div class="ex-file" onclick="showPanel('f-dir-config')" id="f-f-dir-config">
+          <div class="ef-dot" style="background:var(--warn)"></div> Directory_Config.json
+        </div>
+        <div class="ex-file" onclick="showPanel('f-custom-attr')" id="f-f-custom-attr">
+          <div class="ef-dot" style="background:var(--warn)"></div> custom_attributes.json
+        </div>
+      </div>
+
+      <!-- lib/ -->
+      <div class="ex-section" style="margin-top:8px; border-top:1px solid var(--border); padding-top:10px">
+        <div class="ex-section-label" style="color:var(--s3)">
+          <span>📂</span> lib/
+        </div>
+
+        <div class="ex-file" onclick="showPanel('f-apis')" id="f-f-apis">
+          <div class="ef-dot" style="background:var(--s3)"></div> apis.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-apis-json')" id="f-f-apis-json">
+          <div class="ef-dot" style="background:var(--s3)"></div> apis.json
+        </div>
+        <div class="ex-file" onclick="showPanel('f-generic')" id="f-f-generic">
+          <div class="ef-dot" style="background:var(--s2)"></div> generic_utils.py
+        </div>
+
+        <div class="ex-folder" onclick="showPanel('lib-adutils')" id="f-lib-adutils" style="margin-top:4px">
+          <span class="ef-icon">📁</span> AD_Utilities/
+        </div>
+        <div class="ex-file" onclick="showPanel('f-adutils')" id="f-f-adutils">
+          <div class="ef-dot" style="background:var(--s2)"></div> ad_utils.py
+        </div>
+        <div class="ex-file" onclick="showPanel('f-bulk')" id="f-f-bulk">
+          <div class="ef-dot" style="background:var(--s2)"></div> bulk_data_creator.py
+        </div>
+
+        <div class="ex-folder" onclick="showPanel('lib-data')" id="f-lib-data" style="margin-top:4px">
+          <span class="ef-icon">📁</span> data/
+        </div>
+        <div class="ex-file" onclick="showPanel('f-data-utils')" id="f-f-data-utils">
+          <div class="ef-dot" style="background:var(--s4)"></div> utilities.py
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT — detail panels -->
+    <div class="explorer-detail">
+
+      <!-- DEFAULT: active_directory folder -->
+      <div class="detail-panel active" id="p-tests-ad">
+        <div class="dp-path">tests/ <span>›</span> <span class="cur">active_directory/</span></div>
+        <div class="dp-title">📁 active_directory/ <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">TEST LAYER</div></div>
+        <div class="dp-desc">Contains all test files for Active Directory integration. Both pytest (.py) and Robot Framework (.robot) files live here side by side. The .py files contain all test logic. The .robot files are reporters only — they import the Python class and add tags for Jenkins filtering.</div>
+        <div class="dp-files-title">Files in this folder</div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_Active_Directory.py</div><div class="dp-file-desc">38 test cases — full AD lifecycle, diff sync, attributes, deletion, auth</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s2)">Test_Active_Directory.robot</div><div class="dp-file-desc">Robot wrapper — imports Python class, adds tags, Jenkins reporting only</div></div>
+          <div class="dp-file-tag" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.2)">robot</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_AD_LDAPS.py</div><div class="dp-file-desc">Secure LDAP over SSL tests</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_AD_Global_Catalog.py</div><div class="dp-file-desc">Multi-domain Global Catalog tests + diff sync scenarios</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_AD_Performance.py</div><div class="dp-file-desc">Large scale user/group sync load tests</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">TestDirectoryVersioning.py</div><div class="dp-file-desc">Directory version control and revert scenarios</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+      </div>
+
+      <div class="detail-panel" id="p-tests-ldap">
+        <div class="dp-path">tests/ <span>›</span> <span class="cur">ldap/</span></div>
+        <div class="dp-title">📁 ldap/ <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">TEST LAYER</div></div>
+        <div class="dp-desc">All LDAP and OpenLDAP test files. Same structure as active_directory — .py for logic, .robot for reporting.</div>
+        <div class="dp-files-title">Files in this folder</div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_Ldap.py</div><div class="dp-file-desc">Standard LDAP directory functional tests</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_OpenLDAP_Functional.py</div><div class="dp-file-desc">OpenLDAP specific functional scenarios</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_OpenLDAP_Performance.py</div><div class="dp-file-desc">Large scale user sync performance tests</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Okta_LDAP/Test_OktaLDAP.py</div><div class="dp-file-desc">Okta LDAP integration scenarios</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+      </div>
+
+      <div class="detail-panel" id="p-tests-adlds">
+        <div class="dp-path">tests/ <span>›</span> <span class="cur">ad_lds/</span></div>
+        <div class="dp-title">📁 ad_lds/ <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">TEST LAYER</div></div>
+        <div class="dp-desc">Test files for AD LDS (Active Directory Lightweight Directory Services) — a lighter version of AD used for application-specific directories.</div>
+        <div class="dp-files-title">Files in this folder</div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--s1)">Test_Ad_Lds.py</div><div class="dp-file-desc">AD LDS directory creation, sync, user and group management tests</div></div>
+          <div class="dp-file-tag" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.2)">pytest</div>
+        </div>
+      </div>
+
+      <div class="detail-panel" id="p-tests-config">
+        <div class="dp-path">tests/ <span>›</span> <span class="cur">Config/</span></div>
+        <div class="dp-title">📁 Config/ <div class="dp-badge" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.3)">DATA LAYER</div></div>
+        <div class="dp-desc">Static test configuration files. Read by Config_Provider at runtime. Contains connection details and test data for all directory types.</div>
+        <div class="dp-files-title">Files in this folder</div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--warn)">Directory_Config.json</div><div class="dp-file-desc">Host, domain, admin credentials, test user details, connector names for AD / LDAP / AD LDS</div></div>
+          <div class="dp-file-tag" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.2)">config</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--warn)">custom_attributes.json</div><div class="dp-file-desc">Attribute definitions used in attribute mapping and sync validation tests</div></div>
+          <div class="dp-file-tag" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.2)">config</div>
+        </div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--warn)">group_and_user_dir_data.json</div><div class="dp-file-desc">Test group and user data for sync validation scenarios</div></div>
+          <div class="dp-file-tag" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.2)">config</div>
+        </div>
+      </div>
+
+      <!-- File detail panels -->
+      <div class="detail-panel" id="p-f-ad-main">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">Test_Active_Directory.py</span></div>
+        <div class="dp-title">🐍 Test_Active_Directory.py <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">pytest</div></div>
+        <div class="dp-desc">The main AD test file — 38 test cases covering the complete Active Directory lifecycle. This is the largest and most comprehensive test file in the framework.</div>
+        <div class="dp-files-title">Test coverage</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s1)">test_01 — test_04</div><div class="dp-file-desc">Directory creation, config, connectivity verification, user sync, end-to-end auth</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s1)">test_05 — test_12</div><div class="dp-file-desc">Diff sync — add/remove/disable/enable users in groups and OUs</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s1)">test_22 — test_29</div><div class="dp-file-desc">User attribute management — add, update, remove string/integer/multi-valued attributes</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s1)">test_35 — test_38</div><div class="dp-file-desc">Force delete groups/OUs linked to apps — verify auth fails after deletion</div></div></div>
+      </div>
+
+      <div class="detail-panel" id="p-f-ad-robot">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">Test_Active_Directory.robot</span></div>
+        <div class="dp-title">🤖 Test_Active_Directory.robot <div class="dp-badge" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.3)">reporting only</div></div>
+        <div class="dp-desc">Zero test logic. Purely a Robot Framework wrapper that imports the Python class as a Library, maps lifecycle methods, and adds tags for Jenkins filtering. Every test case just calls the Python method by name.</div>
+        <div class="dp-files-title">What it does</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">Library import</div><div class="dp-file-desc">Imports Test_Active_Directory.py WITH NAME obj — makes all Python methods callable</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">Lifecycle mapping</div><div class="dp-file-desc">Suite Setup → obj.setup_class · Test Setup → obj.setup · Teardown → obj.teardown</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">Tags per test</div><div class="dp-file-desc">smoke · ad-directory · dir · uc_ext_sanity · egt_advanced · Q-473 — used for Jenkins -i/-e filtering</div></div></div>
+      </div>
+
+      <div class="detail-panel" id="p-f-ad-ldaps">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">Test_AD_LDAPS.py</span></div>
+        <div class="dp-title">🔒 Test_AD_LDAPS.py <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">pytest</div></div>
+        <div class="dp-desc">Tests for Active Directory over secure LDAP (LDAPS — LDAP over SSL/TLS). Validates that the connector can establish secure connections and that user sync works over encrypted channel.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-ad-gc">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">Test_AD_Global_Catalog.py</span></div>
+        <div class="dp-title">🌐 Test_AD_Global_Catalog.py <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">pytest</div></div>
+        <div class="dp-desc">Tests for Active Directory Global Catalog — a multi-domain feature where users from multiple AD domains are synced through a single directory entry point. Includes diff sync scenarios specific to GC.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-ad-perf">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">Test_AD_Performance.py</span></div>
+        <div class="dp-title">⚡ Test_AD_Performance.py <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">pytest</div></div>
+        <div class="dp-desc">Load and performance tests. Uses bulk_data_creator.py to generate large numbers of users and groups in AD, then validates that EAA can sync them within acceptable time thresholds.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-ad-ver">
+        <div class="dp-path">tests/ › active_directory/ <span>›</span> <span class="cur">TestDirectoryVersioning.py</span></div>
+        <div class="dp-title">🔄 TestDirectoryVersioning.py <div class="dp-badge" style="color:var(--s1); background:rgba(255,107,53,0.1); border-color:rgba(255,107,53,0.3)">pytest</div></div>
+        <div class="dp-desc">Tests for EAA's directory versioning feature — the ability to snapshot directory config, make changes, and revert to a previous version. Validates config integrity across version operations.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-dir-config">
+        <div class="dp-path">tests/ › Config/ <span>›</span> <span class="cur">Directory_Config.json</span></div>
+        <div class="dp-title">⚙️ Directory_Config.json <div class="dp-badge" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.3)">static config</div></div>
+        <div class="dp-desc">The primary config file. Contains all environment-specific connection details for each directory type. Read by Config_Provider.get_param("DirectoryConfig").</div>
+        <div class="dp-files-title">Contains</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--warn)">Connection details</div><div class="dp-file-desc">AD host, domain, base DN, admin username + password</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--warn)">Test users</div><div class="dp-file-desc">Test account credentials used for login validation via IDP</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--warn)">Connector config</div><div class="dp-file-desc">Connector names per environment — overridden by connector_name env var from Jenkins</div></div></div>
+      </div>
+
+      <div class="detail-panel" id="p-f-custom-attr">
+        <div class="dp-path">tests/ › Config/ <span>›</span> <span class="cur">custom_attributes.json</span></div>
+        <div class="dp-title">🏷️ custom_attributes.json <div class="dp-badge" style="color:var(--warn); background:rgba(255,204,68,0.1); border-color:rgba(255,204,68,0.3)">static config</div></div>
+        <div class="dp-desc">Defines custom attribute mappings used in attribute sync tests. Maps AD attribute names to EAA attribute names with types (string, integer, multi-valued) for test_22 through test_34.</div>
+      </div>
+
+      <!-- lib file panels -->
+      <div class="detail-panel" id="p-f-apis">
+        <div class="dp-path">lib/ <span>›</span> <span class="cur">apis.py</span></div>
+        <div class="dp-title">🔌 apis.py <div class="dp-badge" style="color:var(--s3); background:rgba(77,159,255,0.1); border-color:rgba(77,159,255,0.3)">API LAYER</div></div>
+        <div class="dp-desc">The single most important file in the lib layer. Every single EAA REST API call goes through this class. Tests never make raw HTTP calls. If EAA's API changes — only this file updates.</div>
+        <div class="dp-files-title">Key methods</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s3)">create_directory()</div><div class="dp-file-desc">POST to create a new directory in EAA</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s3)">sync_directory_groups()</div><div class="dp-file-desc">Triggers a full group sync from directory to EAA</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s3)">directory_verification()</div><div class="dp-file-desc">Polls connectivity status until directory is confirmed Up</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s3)">get_directory_users()</div><div class="dp-file-desc">Fetches synced users from EAA for validation</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s3)">delete_dir_group()</div><div class="dp-file-desc">Removes group from EAA directory — used in teardown</div></div></div>
+      </div>
+
+      <div class="detail-panel" id="p-f-apis-json">
+        <div class="dp-path">lib/ <span>›</span> <span class="cur">apis.json</span></div>
+        <div class="dp-title">📋 apis.json <div class="dp-badge" style="color:var(--s3); background:rgba(77,159,255,0.1); border-color:rgba(77,159,255,0.3)">API SPEC</div></div>
+        <div class="dp-desc">The API specification file. GenerateApis factory reads this and dynamically creates all API client methods at runtime. Adding a new EAA endpoint only requires updating this JSON — no Python boilerplate needed. This is the Factory Pattern in action.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-generic">
+        <div class="dp-path">lib/ <span>›</span> <span class="cur">generic_utils.py</span></div>
+        <div class="dp-title">🔧 generic_utils.py <div class="dp-badge" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.3)">UTILITY LAYER</div></div>
+        <div class="dp-desc">High-level reusable workflows shared across all directory test files. Orchestrates the API layer to perform complex multi-step operations.</div>
+        <div class="dp-files-title">Key methods</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">create_configure_verify_if_directory_is_up()</div><div class="dp-file-desc">Creates directory, assigns connector, configures, deploys, polls until Up</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">create_sync_and_validate_ad_group_user_data()</div><div class="dp-file-desc">Creates AD groups/users, adds to EAA, triggers sync, validates counts</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">login_and_validation_by_api()</div><div class="dp-file-desc">Hits IDP login endpoint, polls until auth succeeds or fails</div></div></div>
+        <div class="dp-file-row">
+          <div><div class="dp-file-name" style="color:var(--bad)">⚠️ God Class warning</div><div class="dp-file-desc">This file does too much — sync, auth, SCIM, attributes, parallel logic. Should be split into focused utils.</div></div>
+        </div>
+      </div>
+
+      <div class="detail-panel" id="p-lib-adutils">
+        <div class="dp-path">lib/ <span>›</span> <span class="cur">AD_Utilities/</span></div>
+        <div class="dp-title">📁 AD_Utilities/ <div class="dp-badge" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.3)">UTILITY LAYER</div></div>
+        <div class="dp-desc">AD-specific utility files. These talk directly to Active Directory via LDAP using the ldap3 library — creating users, groups, modifying attributes. Separate from generic_utils because they interact with AD directly, not through EAA's API.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-adutils">
+        <div class="dp-path">lib/ › AD_Utilities/ <span>›</span> <span class="cur">ad_utils.py</span></div>
+        <div class="dp-title">🗂️ ad_utils.py <div class="dp-badge" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.3)">UTILITY LAYER</div></div>
+        <div class="dp-desc">Direct Active Directory operations via LDAP. This is how tests manipulate AD state before triggering EAA sync.</div>
+        <div class="dp-files-title">Key methods</div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">diff_sync_operations()</div><div class="dp-file-desc">Performs ADD_USER / REMOVE_USER / DISABLE_USER ops in AD then triggers EAA diff sync</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">create_group_and_users()</div><div class="dp-file-desc">Creates groups and users directly in AD via LDAP</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">wait_till_all_user_are_synced()</div><div class="dp-file-desc">Polls EAA user count until it matches expected — handles async sync delay</div></div></div>
+        <div class="dp-file-row"><div><div class="dp-file-name" style="color:var(--s2)">update_attr_in_general_setting_and_eaa_map()</div><div class="dp-file-desc">Updates custom attributes in both AD and EAA mapping config</div></div></div>
+      </div>
+
+      <div class="detail-panel" id="p-f-bulk">
+        <div class="dp-path">lib/ › AD_Utilities/ <span>›</span> <span class="cur">bulk_data_creator.py</span></div>
+        <div class="dp-title">📦 bulk_data_creator.py <div class="dp-badge" style="color:var(--s2); background:rgba(0,212,170,0.1); border-color:rgba(0,212,170,0.3)">UTILITY LAYER</div></div>
+        <div class="dp-desc">Creates large volumes of users and groups in Active Directory for performance and load testing. Used by Test_AD_Performance.py to seed AD with hundreds of users before testing EAA's sync throughput.</div>
+      </div>
+
+      <div class="detail-panel" id="p-lib-data">
+        <div class="dp-path">lib/ <span>›</span> <span class="cur">data/</span></div>
+        <div class="dp-title">📁 data/ <div class="dp-badge" style="color:var(--s4); background:rgba(199,125,255,0.1); border-color:rgba(199,125,255,0.3)">DATA LAYER</div></div>
+        <div class="dp-desc">Static test data and helper utilities — expected values, payload templates, comparison maps. Used by utility classes to build API request bodies and validate responses.</div>
+      </div>
+
+      <div class="detail-panel" id="p-f-data-utils">
+        <div class="dp-path">lib/ › data/ <span>›</span> <span class="cur">utilities.py</span></div>
+        <div class="dp-title">🛠️ utilities.py <div class="dp-badge" style="color:var(--s4); background:rgba(199,125,255,0.1); border-color:rgba(199,125,255,0.3)">DATA LAYER</div></div>
+        <div class="dp-desc">Helper functions for building API payloads, generating unique test prefixes to avoid naming conflicts, and parsing response data. Also includes LDIF comparison utilities used in AD sync validation.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LAYER DIAGRAM -->
+  <div style="margin-top:32px; margin-bottom:8px; font-size:15px; font-weight:700; color:var(--text)">The 4 Layers — Bottom Up</div>
+  <div style="font-size:13px; color:var(--mid); margin-bottom:16px">Tests depend on utils. Utils depend on APIs. APIs talk to EAA. Data feeds everything.</div>
+
+  <div class="pyramid">
+
+    <div class="pyr-row pr-test">
+      <div class="pyr-label">TEST<br>LAYER<br><span style="font-size:9px; color:var(--dim); font-weight:400">what to test</span></div>
+      <div class="pyr-body">
+        <div class="pyr-files">
+          <div class="pyr-pill">Test_Active_Directory.py</div>
+          <div class="pyr-pill">Test_Ldap.py</div>
+          <div class="pyr-pill">Test_Ad_Lds.py</div>
+          <div class="pyr-pill">Test_AD_Performance.py</div>
+        </div>
+        <div class="pyr-desc">Test cases only. Orchestrates utils, asserts results. No logic, no HTTP calls.</div>
+      </div>
+    </div>
+
+    <div class="pyr-arrow">↓ calls</div>
+
+    <div class="pyr-row pr-util">
+      <div class="pyr-label">UTILITY<br>LAYER<br><span style="font-size:9px; color:var(--dim); font-weight:400">how to do it</span></div>
+      <div class="pyr-body">
+        <div class="pyr-files">
+          <div class="pyr-pill">generic_utils.py</div>
+          <div class="pyr-pill">ad_utils.py</div>
+          <div class="pyr-pill">bulk_data_creator.py</div>
+        </div>
+        <div class="pyr-desc">Reusable business workflows. Shared across all test files. No test assertions here.</div>
+      </div>
+    </div>
+
+    <div class="pyr-arrow">↓ calls</div>
+
+    <div class="pyr-row pr-api">
+      <div class="pyr-label">API<br>LAYER<br><span style="font-size:9px; color:var(--dim); font-weight:400">talk to EAA</span></div>
+      <div class="pyr-body">
+        <div class="pyr-files">
+          <div class="pyr-pill">apis.py</div>
+          <div class="pyr-pill">apis.json</div>
+        </div>
+        <div class="pyr-desc">All EAA REST calls. Auto-generated from spec. Single update point when API changes.</div>
+      </div>
+    </div>
+
+    <div class="pyr-arrow">↓ reads</div>
+
+    <div class="pyr-row pr-data">
+      <div class="pyr-label">DATA<br>LAYER<br><span style="font-size:9px; color:var(--dim); font-weight:400">config + data</span></div>
+      <div class="pyr-body">
+        <div class="pyr-files">
+          <div class="pyr-pill">Directory_Config.json</div>
+          <div class="pyr-pill">custom_attributes.json</div>
+          <div class="pyr-pill">data/utilities.py</div>
+        </div>
+        <div class="pyr-desc">Config files + payload builders. Read by Config_Provider. Env vars override from Jenkins.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout warn" style="margin-top:20px">
+    <strong>Gold standard gaps:</strong> No conftest.py or pytest.ini — setup_class used instead of fixtures. Test files are large and could be split by scenario type. generic_utils is a God Class. These are best practice gaps — the framework works correctly without them.
+  </div>
+
+</div>
+
+<script>
+function showPanel(id) {
+  // hide all panels
+  document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
+  // show selected
+  const panel = document.getElementById('p-' + id);
+  if (panel) panel.classList.add('active');
+
+  // update sidebar active state
+  document.querySelectorAll('.ex-folder, .ex-file').forEach(el => el.classList.remove('active'));
+  const item = document.getElementById('f-' + id);
+  if (item) item.classList.add('active');
+}
+</script>
+
+<!-- ══════════════════════════════════════════
+     SECTION 4 — END-TO-END FLOW
+══════════════════════════════════════════ -->
+<div class="section s4-theme" id="s4">
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <div class="section-meta">
+      <div class="section-label">Section 4</div>
+      <div class="section-title">End-to-End Flow</div>
+      <div class="section-sub">From Jenkins trigger to HTML report — every step explained</div>
+    </div>
+  </div>
+
+  <!-- Big flow -->
+  <div class="flow">
+
+    <div class="flow-row">
+      <div class="flow-box fb-j">① Jenkins Job Triggered</div>
+      <div class="flow-side">webhook on env upgrade<br>or manual trigger</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">params injected as env vars</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-d">② Git Clone — fresh branch</div>
+      <div class="flow-side">always latest test code</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">Dockerfile from repo</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-d">③ Docker Image Built</div>
+      <div class="flow-side">Ubuntu + Python + pytest<br>+ Robot + all packages</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">-v mount + -e env vars</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-d">④ Container Starts → entrypoint.sh</div>
+      <div class="flow-side">SSH agent + akanebula key<br>then exec robot cmd</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">imports Python class as Library</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-r">⑤ Robot Framework runs .robot</div>
+      <div class="flow-side">reads tags → -i smoke -e fips<br>maps lifecycle hooks</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">Suite Setup → setup_class()</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-p">⑥ setup_class() — create dir + IDP</div>
+      <div class="flow-side">Config_Provider reads JSON<br>os.environ reads Jenkins params</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">Robot calls each test method</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-p">⑦ pytest test methods execute</div>
+      <div class="flow-side">→ GenericUtils / ADutils<br>→ Directory_Apis → EAA REST<br>→ ldap3 → Active Directory</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">listener pushes per test result</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-q">⑧ QASE Listener — real-time push</div>
+      <div class="flow-side">Q-473 tag → QASE test case<br>visible in dashboard live</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">output.xml via volume mount → Jenkins workspace</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-j">⑨ Pass % check → Re-run logic</div>
+      <div class="flow-side">100% → done<br>&gt; threshold → rerun failed<br>&lt; threshold → fail build</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">rebot --merge output.xml finalo.xml</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-rp">⑩ output.xml + log.html + report.html</div>
+      <div class="flow-side">Robot Framework<br>auto-generated</div>
+    </div>
+    <div class="flow-arrow"><span></span>▼<div class="flow-label">Jenkins Robot Plugin reads output.xml</div></div>
+
+    <div class="flow-row">
+      <div class="flow-box fb-rp">⑪ Jenkins Dashboard + Trend Graph</div>
+      <div class="flow-side">pass/fail count<br>historical trend</div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- How Robot calls Python -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px">How Robot Framework calls Python methods</div>
+    <div class="code">
+      <div class="code-bar">
+        <span class="cb-name">Test_Active_Directory.robot</span>
+        <span class="cb-lang" style="background:rgba(0,212,170,0.15); color:var(--s2)">robot</span>
+      </div>
+      <pre><span class="cm">*** Settings ***</span>
+<span class="cm"># Import Python class — Robot can call any method on it</span>
+<span class="tag-r">Library</span>    Test_Active_Directory.py  <span class="kw">WITH NAME</span>  obj
+
+<span class="tag-r">Suite Setup</span>      obj.setup_class    <span class="cm"># → runs setup_class() once</span>
+<span class="tag-r">Test Setup</span>       obj.setup          <span class="cm"># → runs setup() before each test</span>
+<span class="tag-r">Test Teardown</span>    obj.teardown       <span class="cm"># → runs teardown() after each test</span>
+<span class="tag-r">Suite Teardown</span>   obj.teardown_class <span class="cm"># → runs teardown_class() once</span>
+
+<span class="cm">*** Test Cases ***</span>
+test_01_create_configure_and_check_if_directory_is_up
+    [<span class="tag-r">Tags</span>]  <span class="str">smoke</span>  <span class="str">ad-directory</span>  <span class="str">dir</span>  <span class="str">uc_ext_sanity</span>
+    test_01_create_configure_and_check_if_directory_is_up  <span class="cm"># calls Python method</span>
+
+test_02_create_directory_configure_sync_users_groups
+    [<span class="tag-r">Tags</span>]  <span class="str">smoke</span>  <span class="str">dir</span>  <span class="str">beta_sanity</span>  <span class="str">Q-473</span>
+    test_02_create_directory_configure_sync_users_groups</pre>
+    </div>
+  </div>
+
+  <!-- How config flows -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px">How Jenkins params reach Python code</div>
+    <div class="hflow">
+      <div class="hf-node" style="color:var(--s1); background:rgba(255,107,53,0.08); border-color:rgba(255,107,53,0.25)">Jenkins param</div>
+      <div class="hf-arr">→</div>
+      <div class="hf-node" style="color:var(--s3); background:rgba(77,159,255,0.08); border-color:rgba(77,159,255,0.25)">docker -e flag</div>
+      <div class="hf-arr">→</div>
+      <div class="hf-node" style="color:var(--s3); background:rgba(77,159,255,0.08); border-color:rgba(77,159,255,0.25)">container env var</div>
+      <div class="hf-arr">→</div>
+      <div class="hf-node" style="color:var(--s4); background:rgba(199,125,255,0.08); border-color:rgba(199,125,255,0.25)">os.environ.get()</div>
+      <div class="hf-arr">→</div>
+      <div class="hf-node" style="color:var(--s2); background:rgba(0,212,170,0.08); border-color:rgba(0,212,170,0.25)">Python test code</div>
+    </div>
+    <div class="code">
+      <div class="code-bar">
+        <span class="cb-name">Test_Active_Directory.py — config reading</span>
+        <span class="cb-lang" style="background:rgba(199,125,255,0.15); color:var(--s4)">python</span>
+      </div>
+      <pre><span class="kw">@classmethod</span>
+<span class="kw">def</span> <span class="fn">setup_class</span>(<span class="var">cls</span>):
+    <span class="cm"># Dynamic — from Jenkins via Docker -e flag</span>
+    <span class="var">cls</span>.cleanup        = os.<span class="fn">environ.get</span>(<span class="str">"cleanup"</span>, <span class="str">"YES"</span>)
+    <span class="var">cls</span>.connector_name = os.<span class="fn">environ.get</span>(<span class="str">"connector_name"</span>)
+
+    <span class="cm"># Static — from JSON config files</span>
+    <span class="var">cls</span>.dirConfigData  = Config_Provider.<span class="fn">get_param</span>(<span class="str">"DirectoryConfig"</span>)
+    <span class="var">cls</span>.attrConfigData = Config_Provider.<span class="fn">get_param</span>(<span class="str">"CustomAttrData"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- Re-run logic -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px">Smart re-run logic</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Condition</th><th>Action</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>pass% == 100</td>
+            <td><span class="yes">Exit 0 — done</span></td>
+            <td>All tests passed. No re-run needed.</td>
+          </tr>
+          <tr>
+            <td>pass% &gt; threshold</td>
+            <td><span class="maybe">Re-run failed only → merge</span></td>
+            <td>Likely flaky tests. Re-run just failures, merge with rebot.</td>
+          </tr>
+          <tr>
+            <td>pass% &lt; threshold</td>
+            <td><span class="no">Exit 1 — fail build</span></td>
+            <td>Too many failures. Real issue. Not worth re-running.</td>
+          </tr>
+          <tr>
+            <td>Rebuild_on_Failure = No</td>
+            <td><span class="no">Exit 1 — no re-run</span></td>
+            <td>Re-run disabled by Jenkins parameter.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+</div>
+
+</div><!-- end content -->
+
+<footer>
+  EAA Directory Automation Framework · Test Automation Overview
+</footer>
+
+<script>
+// Active nav on scroll
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navItems.forEach(n => {
+        n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
