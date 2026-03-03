@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Location Load Testing System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e4e4e7;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: rgba(0, 245, 255, 0.05);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .icon-globe {
+            font-size: 2.5rem;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 2.5rem);
+            margin: 0;
+            background: linear-gradient(135deg, #00f5ff, #fff, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a1a1aa;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #a1a1aa;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00f5ff;
+        }
+
+        .section-card {
+            background: rgba(26, 31, 58, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #00f5ff;
+        }
+
+        .architecture-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .flow-column {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .flow-label {
+            margin-bottom: 1rem;
+            color: #a1a1aa;
+            font-size: 0.875rem;
+        }
+
+        .country-box {
+            background: rgba(0, 245, 255, 0.05);
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .country-box.warning {
+            border-color: #eab308;
+        }
+
+        .country-box.critical {
+            border-color: #ef4444;
+        }
+
+        .country-flag {
+            font-size: 2rem;
+        }
+
+        .country-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .country-name {
+            font-weight: bold;
+            color: #00f5ff;
+        }
+
+        .country-region {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: #00f5ff;
+        }
+
+        .vpn-box {
+            background: rgba(0, 245, 255, 0.1);
+            border: 2px dashed #00f5ff;
+            border-radius: 12px;
+            padding: 2rem 1rem;
+        }
+
+        .vpn-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .vpn-title {
+            font-weight: bold;
+            color: #00f5ff;
+        }
+
+        .vpn-details {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            margin-top: 0.5rem;
+        }
+
+        .endpoint-box {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.1), rgba(255, 107, 53, 0.1));
+            border: 2px solid #00f5ff;
+            border-radius: 12px;
+            padding: 2rem 1rem;
+        }
+
+        .ui-box {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 12px;
+            padding: 2rem 1rem;
+        }
+
+        .status-dots {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+            margin-top: 0.75rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-section {
+            background: rgba(26, 31, 58, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .legend-icon {
+            font-size: 1.5rem;
+        }
+
+        .legend-label {
+            font-weight: bold;
+        }
+
+        .legend-desc {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+        }
+
+        .setup-section {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.08), rgba(255, 107, 53, 0.05));
+            border: 2px solid rgba(0, 245, 255, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .setup-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #00f5ff;
+            font-weight: 800;
+        }
+
+        .setup-desc {
+            color: #a1a1aa;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .how-it-works {
+            background: rgba(26, 31, 58, 0.6);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(0, 245, 255, 0.2);
+        }
+
+        .step {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            min-width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .step-1 .step-number {
+            background: #00f5ff;
+            color: #0a0e27;
+        }
+
+        .step-2 .step-number {
+            background: #ff6b35;
+            color: #0a0e27;
+        }
+
+        .step-3 .step-number {
+            background: #22c55e;
+            color: #0a0e27;
+        }
+
+        .step-content h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .step-1 h4 {
+            color: #00f5ff;
+        }
+
+        .step-2 h4 {
+            color: #ff6b35;
+        }
+
+        .step-3 h4 {
+            color: #22c55e;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: #a1a1aa;
+            line-height: 1.7;
+        }
+
+        code {
+            background: rgba(0, 245, 255, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: #00f5ff;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .param-card {
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .param-card-1 {
+            background: rgba(0, 245, 255, 0.05);
+            border-left: 4px solid #00f5ff;
+        }
+
+        .param-card-2 {
+            background: rgba(255, 107, 53, 0.05);
+            border-left: 4px solid #ff6b35;
+        }
+
+        .param-card-3 {
+            background: rgba(34, 197, 94, 0.05);
+            border-left: 4px solid #22c55e;
+        }
+
+        .param-title {
+            margin: 0 0 0.75rem 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .param-card-1 .param-title {
+            color: #00f5ff;
+        }
+
+        .param-card-2 .param-title {
+            color: #ff6b35;
+        }
+
+        .param-card-3 .param-title {
+            color: #22c55e;
+        }
+
+        .param-values {
+            font-family: monospace;
+            font-size: 0.875rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .param-values div {
+            color: #a1a1aa;
+            margin-bottom: 0.25rem;
+        }
+
+        .param-values div:last-child {
+            margin-bottom: 0;
+        }
+
+        .param-card-1 .param-values span {
+            color: #00f5ff;
+        }
+
+        .param-card-2 .param-values span {
+            color: #ff6b35;
+        }
+
+        .param-card-3 .param-values span {
+            color: #22c55e;
+        }
+
+        .param-desc {
+            margin: 0;
+            color: #a1a1aa;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .commands-section {
+            background: rgba(26, 31, 58, 0.6);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .commands-title {
+            color: #00f5ff;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .code-block {
+            background: #0d1117;
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 0.875rem;
+            line-height: 1.8;
+        }
+
+        .code-comment {
+            color: #6e7681;
+        }
+
+        .code-command {
+            color: #79c0ff;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .architecture-flow {
+                flex-direction: column;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-content">
+                <div class="icon-globe">🌍</div>
+                <div>
+                    <h1>Multi-Location Load Testing System</h1>
+                    <p class="subtitle">Automated geo-distributed load testing with Docker, OpenVPN & Locust</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-label">Total DPOPs</div>
+                        <div class="stat-value">3</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-label">Logical POPs</div>
+                        <div class="stat-value">15</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-label">Requests/sec</div>
+                        <div class="stat-value">9</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value" style="color: #22c55e;">99.9%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Architecture -->
+        <div class="section-card">
+            <h2 class="section-title">☁️ System Architecture</h2>
+
+            <div class="architecture-flow">
+                <!-- Docker Containers -->
+                <div class="flow-column">
+                    <div class="flow-label">Docker + OpenVPN</div>
+                    <div class="country-box">
+                        <div class="country-flag">🇩🇪</div>
+                        <div class="country-info">
+                            <div class="country-name">DPOP-GERMANY</div>
+                            <div class="country-region">EU-CENTRAL</div>
+                        </div>
+                        <div style="color: #22c55e;">✓</div>
+                    </div>
+                    <div class="country-box warning">
+                        <div class="country-flag">🇯🇵</div>
+                        <div class="country-info">
+                            <div class="country-name">DPOP-JAPAN</div>
+                            <div class="country-region">ASIA-EAST</div>
+                        </div>
+                        <div style="color: #eab308;">⚠</div>
+                    </div>
+                    <div class="country-box critical">
+                        <div class="country-flag">🇧🇷</div>
+                        <div class="country-info">
+                            <div class="country-name">DPOP-BRAZIL</div>
+                            <div class="country-region">SA-SOUTH</div>
+                        </div>
+                        <div style="color: #ef4444;">✕</div>
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <!-- VPN Tunnel -->
+                <div class="flow-column">
+                    <div class="flow-label">VPN Tunnels</div>
+                    <div class="vpn-box">
+                        <div class="vpn-icon">🔐</div>
+                        <div class="vpn-title">Encrypted Routes</div>
+                        <div class="vpn-details">
+                            AES-256-GCM<br>
+                            mTLS Auth
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <!-- Metrics Receiver -->
+                <div class="flow-column">
+                    <div class="flow-label">Metrics Receiver</div>
+                    <div class="endpoint-box">
+                        <div class="vpn-icon">💾</div>
+                        <div class="vpn-title">Akamai Endpoint</div>
+                        <div class="vpn-details">Telegraf Protocol</div>
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <!-- UI Dashboard -->
+                <div class="flow-column">
+                    <div class="flow-label">Health Dashboard</div>
+                    <div class="ui-box">
+                        <div class="vpn-icon">📊</div>
+                        <div class="vpn-title">Real-time UI</div>
+                        <div class="status-dots">
+                            <div class="status-dot" style="background: #22c55e;"></div>
+                            <div class="status-dot" style="background: #eab308;"></div>
+                            <div class="status-dot" style="background: #ef4444;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Legend -->
+        <div class="legend-section">
+            <div class="legend-item">
+                <div class="legend-icon" style="color: #22c55e;">✓</div>
+                <div>
+                    <div class="legend-label" style="color: #22c55e;">Healthy</div>
+                    <div class="legend-desc">Load &lt; 30%</div>
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="color: #eab308;">⚠</div>
+                <div>
+                    <div class="legend-label" style="color: #eab308;">Warning</div>
+                    <div class="legend-desc">Load 30-60%</div>
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="color: #ef4444;">✕</div>
+                <div>
+                    <div class="legend-label" style="color: #ef4444;">Critical</div>
+                    <div class="legend-desc">Load &gt; 60%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Load Testing Setup -->
+        <div class="setup-section">
+            <h2 class="setup-title">Automated Load Testing Setup</h2>
+            <p class="setup-desc">
+                Docker Compose orchestrates multiple containers, each running Locust scripts to generate metrics and simulate load automatically
+            </p>
+
+            <!-- How It Works -->
+            <div class="how-it-works">
+                <h3 class="section-title">▶️ How It Works</h3>
+                
+                <div class="step step-1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Docker Compose Orchestration</h4>
+                        <p>
+                            <code>docker-compose.yml</code> defines multiple services (Germany, Japan, Brazil containers). 
+                            Each service spins up an isolated Docker container with its own OpenVPN configuration.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step step-2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Automated Script Execution</h4>
+                        <p>
+                            Each container automatically runs <code>simulator.py</code> (or Locust script) to generate metrics. 
+                            No manual intervention needed - containers start generating load immediately on deployment.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step step-3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Geographic Load Distribution</h4>
+                        <p>
+                            Each container connects through country-specific OpenVPN tunnels, routing all traffic to appear 
+                            from that geographic location. This simulates real-world distributed load patterns.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configurable Parameters -->
+            <div class="how-it-works">
+                <h3 class="section-title">⚙️ Configurable Parameters</h3>
+                
+                <div class="params-grid">
+                    <!-- Load Intensity -->
+                    <div class="param-card param-card-1">
+                        <h4 class="param-title">⚡ Load Intensity</h4>
+                        <div class="param-values">
+                            <div>INTERVAL: <span>1-60</span> seconds</div>
+                            <div>USERS: <span>1-1000</span></div>
+                            <div>SPAWN_RATE: <span>1-100</span>/sec</div>
+                        </div>
+                        <p class="param-desc">
+                            Adjust request frequency and concurrent users in <code>docker-compose.yml</code> environment variables
+                        </p>
+                    </div>
+
+                    <!-- OpenVPN Count -->
+                    <div class="param-card param-card-2">
+                        <h4 class="param-title">🔐 OpenVPN Count</h4>
+                        <div class="param-values">
+                            <div>Range: <span>0 to 90</span> VPN configs</div>
+                            <div>Per Container: <span>1</span> active VPN</div>
+                            <div>Total Available: <span>90</span> countries</div>
+                        </div>
+                        <p class="param-desc">
+                            Select from 90 available country VPN configs. Scale from 0 containers (no load) to 90 containers (maximum geographic distribution)
+                        </p>
+                    </div>
+
+                    <!-- Container Scaling -->
+                    <div class="param-card param-card-3">
+                        <h4 class="param-title">📦 Container Scaling</h4>
+                        <div class="param-values">
+                            <div>Current: <span>3</span> containers</div>
+                            <div>Maximum: <span>90</span> containers</div>
+                            <div>Deploy: <span>docker-compose</span> up --scale</div>
+                        </div>
+                        <p class="param-desc">
+                            Add/remove container instances using Docker Compose scaling. Each new container = new geographic location with independent load generation
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start Commands -->
+            <div class="commands-section">
+                <h3 class="commands-title">Quick Start Commands</h3>
+                <div class="code-block">
+                    <div class="code-comment"># Start all containers with default config</div>
+                    <div class="code-command">docker-compose up -d</div>
+                    <br>
+                    <div class="code-comment"># Scale to 10 containers (10 different locations)</div>
+                    <div class="code-command">docker-compose up -d --scale germany=10</div>
+                    <br>
+                    <div class="code-comment"># Stop all load generation</div>
+                    <div class="code-command">docker-compose down</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
