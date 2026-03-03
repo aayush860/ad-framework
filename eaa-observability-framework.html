@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EAA Observability Framework — Architecture Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --accent: #00f5c4;
+    --accent2: #7c6af7;
+    --accent3: #f5a623;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --code-bg: #0d0d16;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,196,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,196,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 8rem 4rem 4rem;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,245,196,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 900px; }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    border: 1px solid rgba(0,245,196,0.3);
+    padding: 0.4rem 0.8rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .hero h1 span { color: var(--accent); }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    animation: fadeUp 0.6s ease 0.3s both;
+  }
+
+  .stat { border-left: 2px solid var(--accent); padding-left: 1rem; }
+  .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.2rem; }
+
+  /* SECTIONS */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 5rem 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+
+  h2 span { color: var(--accent); }
+
+  .section-intro {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 650px;
+    margin-bottom: 3rem;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ARCHITECTURE FLOW */
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 2rem 0 3rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+
+  .arch-node {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    min-width: 160px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .arch-node:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+  }
+
+  .arch-node.highlight { border-color: rgba(0,245,196,0.4); background: rgba(0,245,196,0.04); }
+
+  .arch-node-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .arch-node-title { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+  .arch-node-sub { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; font-family: 'Space Mono', monospace; }
+
+  .arch-arrow {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.75rem;
+    gap: 0.2rem;
+  }
+
+  .arch-arrow-line {
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--border), var(--accent));
+    position: relative;
+  }
+
+  .arch-arrow-line::after {
+    content: '▶';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 0.6rem;
+  }
+
+  .arch-arrow-label { font-size: 0.6rem; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; }
+
+  /* LAYER CARDS */
+  .layers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+
+  .layer-card {
+    background: var(--surface);
+    padding: 1.8rem;
+    transition: background 0.3s;
+  }
+
+  .layer-card:hover { background: var(--surface2); }
+
+  .layer-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+
+  .layer-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .layer-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+
+  .layer-files {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .layer-file {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent2);
+    background: rgba(124,106,247,0.08);
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    border-left: 2px solid var(--accent2);
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.2rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-title { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; }
+
+  .code-dots { display: flex; gap: 0.4rem; }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-dot:nth-child(1) { background: #ff5f57; }
+  .code-dot:nth-child(2) { background: #febc2e; }
+  .code-dot:nth-child(3) { background: #28c840; }
+
+  pre {
+    padding: 1.5rem;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    color: #c9d1d9;
+  }
+
+  .kw { color: #ff79c6; }
+  .fn { color: #50fa7b; }
+  .str { color: #f1fa8c; }
+  .cm { color: #6272a4; font-style: italic; }
+  .var { color: #8be9fd; }
+  .cls { color: #ffb86c; }
+  .num { color: #bd93f9; }
+
+  /* PATTERN CARDS */
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .pattern-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .pattern-card:hover {
+    border-color: var(--accent2);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(124,106,247,0.15);
+  }
+
+  .pattern-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+  .pattern-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .pattern-where { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--accent); margin-bottom: 0.5rem; }
+  .pattern-desc { font-size: 0.8rem; color: var(--muted); }
+
+  /* HIGHLIGHT BOX — the "cool" API contract section */
+  .feature-highlight {
+    background: linear-gradient(135deg, rgba(0,245,196,0.05) 0%, rgba(124,106,247,0.05) 100%);
+    border: 1px solid rgba(0,245,196,0.2);
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin: 2rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-highlight::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .feature-highlight-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-highlight-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+
+  .flow-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .flow-step {
+    position: relative;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+  }
+
+  .flow-step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .flow-step-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .flow-step-code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent2);
+    margin-top: 0.5rem;
+    word-break: break-all;
+  }
+
+  /* FOLDER STRUCTURE */
+  .folder-tree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .tree-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0.4rem;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .tree-row:hover { background: rgba(255,255,255,0.03); }
+
+  .tree-file-row { cursor: default; }
+  .tree-file-row:hover { background: rgba(0,245,196,0.05); }
+
+  .tree-indent-1 { padding-left: 1rem; }
+  .tree-indent-2 { padding-left: 2.5rem; }
+  .tree-indent-3 { padding-left: 4rem; }
+  .tree-indent-4 { padding-left: 5.5rem; }
+
+  .tree-pipe { color: var(--border); flex-shrink: 0; }
+  .tree-folder { color: var(--accent3); font-weight: 700; }
+  .tree-file { color: #c9d1d9; }
+  .tree-comment {
+    color: var(--muted);
+    font-size: 0.65rem;
+    margin-left: auto;
+    padding-left: 1.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tree-highlight { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .tree-spacer { height: 0.75rem; }
+
+  /* SIEM TABLE */
+  .siem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .siem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .siem-card:hover { border-color: var(--accent3); transform: scale(1.03); }
+  .siem-card-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .siem-card-key {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent3);
+    background: rgba(245,166,35,0.08);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+  }
+
+  /* SECURITY */
+  .security-flow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+  }
+
+  .sec-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .sec-step-icon { font-size: 1.1rem; }
+  .sec-arrow { color: var(--muted); font-size: 1rem; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    margin-right: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-green { background: rgba(0,245,196,0.1); color: var(--accent); border: 1px solid rgba(0,245,196,0.2); }
+  .badge-purple { background: rgba(124,106,247,0.1); color: var(--accent2); border: 1px solid rgba(124,106,247,0.2); }
+  .badge-orange { background: rgba(245,166,35,0.1); color: var(--accent3); border: 1px solid rgba(245,166,35,0.2); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 2rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-left { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .footer-right { font-size: 0.75rem; color: var(--muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero, section { padding: 4rem 1.5rem; }
+    .hero { padding-top: 6rem; }
+    .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+    .arch-flow { flex-direction: column; align-items: flex-start; }
+    .arch-arrow { transform: rotate(90deg); }
+    footer { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">// EAA_OBSERVABILITY_FRAMEWORK</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#api-engine">API Engine</a></li>
+    <li><a href="#patterns">Patterns</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#structure">Structure</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="overview">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Test Automation Framework · Python · EAA Observability</div>
+    <h1>Enterprise Observability<br><span>Test Framework</span></h1>
+    <p class="hero-desc">
+      A production-grade, data-driven test automation framework for EAA Observability Infrastructure —
+      validating real-time metrics streaming via Telegraf and event-driven access logs via Vector,
+      across multiple SIEM platforms.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">2</div>
+        <div class="stat-label">Observability Streams</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">4</div>
+        <div class="stat-label">SIEM Integrations</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">7</div>
+        <div class="stat-label">Auth Strategies</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Hardcoded URLs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="section-tag">// 01 — SYSTEM DESIGN</div>
+  <h2>Two-Stream <span>Architecture</span></h2>
+  <p class="section-intro">
+    The observability system is split into two independent data streams — continuous metrics polling
+    and event-triggered access logs — both routed through EAA Observability Infrastructure to downstream SIEMs.
+  </p>
+
+  <!-- Stream 1 -->
+  <div style="margin-bottom: 1rem;">
+    <span class="badge badge-green">STREAM 1</span>
+    <span style="font-size:0.8rem; color:var(--muted);">Metrics — continuous, every few seconds</span>
+  </div>
+  <div class="arch-flow">
+    <div class="arch-node highlight">
+      <div class="arch-node-icon">🔌</div>
+      <div class="arch-node-title">Connector</div>
+      <div class="arch-node-sub">via Telegraf</div>
+    </div>
+    <div class="arch-arrow">
+      <div class="arch-arrow-line"></div>
+      <div class="arch-arrow-label">metrics push</div>
+    </div>
+    <div class="arch-node">
+      <div class="arch-node-icon">⚙️</div>
+      <div class="arch-node-title">EAA Observability</div>
+      <div class="arch-node-sub">K8s subscription pod</div>
+    </div>
+    <div class="arch-arrow">
+      <div class="arch-arrow-line"></div>
+      <div class="arch-arrow-label">stream</div>
+    </div>
+    <div class="arch-node highlight">
+      <div class="arch-node-icon">📊</div>
+      <div class="arch-node-title">SIEM</div>
+      <div class="arch-node-sub">Datadog / CloudWatch</div>
+    </div>
+  </div>
+
+  <!-- Stream 2 -->
+  <div style="margin-bottom: 1rem; margin-top: 2rem;">
+    <span class="badge badge-purple">STREAM 2</span>
+    <span style="font-size:0.8rem; color:var(--muted);">Access Logs — event-driven, on login only</span>
+  </div>
+  <div class="arch-flow">
+    <div class="arch-node highlight">
+      <div class="arch-node-icon">🔐</div>
+      <div class="arch-node-title">DPOP</div>
+      <div class="arch-node-sub">via Vector</div>
+    </div>
+    <div class="arch-arrow">
+      <div class="arch-arrow-line"></div>
+      <div class="arch-arrow-label">on login event</div>
+    </div>
+    <div class="arch-node">
+      <div class="arch-node-icon">⚙️</div>
+      <div class="arch-node-title">EAA Observability</div>
+      <div class="arch-node-sub">K8s subscription pod</div>
+    </div>
+    <div class="arch-arrow">
+      <div class="arch-arrow-line"></div>
+      <div class="arch-arrow-label">log forward</div>
+    </div>
+    <div class="arch-node highlight">
+      <div class="arch-node-icon">📊</div>
+      <div class="arch-node-title">SIEM</div>
+      <div class="arch-node-sub">Datadog / Hydrolix</div>
+    </div>
+  </div>
+
+  <!-- Layer breakdown -->
+  <div style="margin-top: 4rem; margin-bottom: 1rem;">
+    <div class="section-tag">// TEST FRAMEWORK LAYERS</div>
+  </div>
+  <div class="layers-grid">
+    <div class="layer-card">
+      <div class="layer-number">LAYER 01 — TEST</div>
+      <div class="layer-title">Test Orchestration</div>
+      <div class="layer-desc">pytest-style class-based tests. setup_class handles pre-test SIEM state, test methods spike resources and assert.</div>
+      <div class="layer-files">
+        <div class="layer-file">TestEAAObservabilityMetricsConnector.py</div>
+      </div>
+    </div>
+    <div class="layer-card">
+      <div class="layer-number">LAYER 02 — ORCHESTRATION</div>
+      <div class="layer-title">Generic Utilities</div>
+      <div class="layer-desc">Hides SIEM check/create/delete complexity. Single entry point for test setup logic.</div>
+      <div class="layer-files">
+        <div class="layer-file">generic_utils.py</div>
+      </div>
+    </div>
+    <div class="layer-card">
+      <div class="layer-number">LAYER 03 — API</div>
+      <div class="layer-title">API Client</div>
+      <div class="layer-desc">Declarative JSON contract drives dynamic method generation. Zero hardcoded URLs or HTTP verbs.</div>
+      <div class="layer-files">
+        <div class="layer-file">apis.py</div>
+        <div class="layer-file">apis.json</div>
+      </div>
+    </div>
+    <div class="layer-card">
+      <div class="layer-number">LAYER 04 — UTILITY</div>
+      <div class="layer-title">SIEM & Resource Utilities</div>
+      <div class="layer-desc">SSH-based resource spiking, Datadog/CloudWatch queriers, shared connector utilities.</div>
+      <div class="layer-files">
+        <div class="layer-file">metric_generator.py</div>
+        <div class="layer-file">datadog_utility.py</div>
+        <div class="layer-file">cloudwatch_utility.py</div>
+        <div class="layer-file">common_utility.py</div>
+      </div>
+    </div>
+    <div class="layer-card">
+      <div class="layer-number">LAYER 05 — SECURITY</div>
+      <div class="layer-title">Secrets Management</div>
+      <div class="layer-desc">Fernet symmetric encryption for all credentials. Key injected via environment variable — never committed.</div>
+      <div class="layer-files">
+        <div class="layer-file">encryption_decryption.py</div>
+        <div class="layer-file">siem_details.json.enc</div>
+        <div class="layer-file">ui_login.json.enc</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- API ENGINE — The "Cool" Section -->
+<section id="api-engine">
+  <div class="section-tag">// 02 — CORE INNOVATION</div>
+  <h2>Zero-Code <span>API Engine</span></h2>
+  <p class="section-intro">
+    The framework's most powerful feature: a declarative JSON contract that auto-generates
+    fully callable Python methods at runtime — with zero file generation and zero extra disk space.
+  </p>
+
+  <div class="feature-highlight">
+    <div class="feature-highlight-title">Runtime Dynamic Dispatch Engine</div>
+    <div class="feature-highlight-sub">
+      Adding a new API endpoint requires <strong style="color:var(--accent)">only a JSON entry</strong> — no Python code, no generated files, no rebuilds.
+    </div>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-num">STEP 01 — DECLARE</div>
+        <div class="flow-step-title">JSON Contract</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.4rem;">Define endpoint, URI, HTTP verb, expected status code in apis.json</div>
+        <div class="flow-step-code">"siem_association": { "URI": "crux/v3/...", "POST": {...} }</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">STEP 02 — INTERCEPT</div>
+        <div class="flow-step-title">__getattr__ Fires</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.4rem;">Python can't find the method — __getattr__ intercepts the attribute lookup</div>
+        <div class="flow-step-code">.post_siem_association → __getattr__("post_siem_association")</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">STEP 03 — PARSE</div>
+        <div class="flow-step-title">Name → HTTP Verb</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.4rem;">Method name is split to extract HTTP verb and endpoint key</div>
+        <div class="flow-step-code">"post_siem_association" → verb="POST" + key="siem_association"</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">STEP 04 — EXECUTE</div>
+        <div class="flow-step-title">Callable Returned</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:0.4rem;">A configured callable is returned and invoked with user-supplied kwargs</div>
+        <div class="flow-step-code">POST https://host/crux/v3/mgmt-pop/siem {body}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code showcase -->
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+      <div class="code-title">generate_apis.py — Core Engine (30 lines)</div>
+    </div>
+    <pre><span class="kw">import</span> json, requests
+
+<span class="kw">class</span> <span class="cls">Rest</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="var">self</span>, <span class="var">host</span>):
+        <span class="var">self</span>.host = <span class="var">host</span>
+        <span class="var">self</span>.config = {}
+
+    <span class="kw">def</span> <span class="fn">generate_apis</span>(<span class="var">self</span>, <span class="var">json_path</span>):
+        <span class="cm"># Load declarative contract — drives everything</span>
+        <span class="kw">with</span> <span class="fn">open</span>(<span class="var">json_path</span>) <span class="kw">as</span> <span class="var">f</span>:
+            <span class="var">self</span>.config = json.<span class="fn">load</span>(<span class="var">f</span>)
+
+    <span class="kw">def</span> <span class="fn">__getattr__</span>(<span class="var">self</span>, <span class="var">group_name</span>):
+        <span class="cm"># Fires when .eaa_metrics is accessed — not a real attribute</span>
+        <span class="kw">if</span> <span class="var">group_name</span> <span class="kw">in</span> <span class="var">self</span>.config:
+            <span class="kw">return</span> <span class="cls">ApiGroup</span>(<span class="var">self</span>.config[<span class="var">group_name</span>], <span class="var">self</span>.host)
+        <span class="kw">raise</span> <span class="cls">AttributeError</span>(<span class="str">f"No group '{group_name}'"</span>)
+
+
+<span class="kw">class</span> <span class="cls">ApiGroup</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="var">self</span>, <span class="var">config</span>, <span class="var">host</span>):
+        <span class="var">self</span>.config = <span class="var">config</span>
+        <span class="var">self</span>.host = <span class="var">host</span>
+
+    <span class="kw">def</span> <span class="fn">__getattr__</span>(<span class="var">self</span>, <span class="var">method_name</span>):
+        <span class="cm"># "post_siem_association" → POST + siem_association</span>
+        <span class="var">verb</span>, <span class="var">endpoint_key</span> = <span class="var">method_name</span>.<span class="fn">split</span>(<span class="str">"_"</span>, <span class="num">1</span>)
+        <span class="var">uri</span> = <span class="var">self</span>.config[<span class="var">endpoint_key</span>][<span class="str">"URI"</span>]
+
+        <span class="kw">def</span> <span class="fn">make_request</span>(**<span class="var">kwargs</span>):
+            <span class="kw">return</span> requests.<span class="fn">request</span>(
+                method=<span class="var">verb</span>.<span class="fn">upper</span>(),
+                url=<span class="str">f"https://{self.host}/{uri}"</span>,
+                json=<span class="var">kwargs</span>.<span class="fn">get</span>(<span class="str">"BODY"</span>, {}),
+                params=<span class="var">kwargs</span>.<span class="fn">get</span>(<span class="str">"PARAMS"</span>, {})
+            )
+        <span class="kw">return</span> <span class="var">make_request</span>  <span class="cm"># returns callable, not result</span></pre>
+  </div>
+
+  <!-- vs comparison -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-top:1.5rem;">
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+        <div class="code-title">❌ Without this engine</div>
+      </div>
+      <pre style="font-size:0.72rem;"><span class="cm"># Every API = manual method</span>
+<span class="kw">def</span> <span class="fn">get_siem</span>(<span class="var">self</span>):
+    <span class="kw">return</span> requests.<span class="fn">get</span>(
+        <span class="str">"https://host/crux/v3/siem"</span>
+    )
+
+<span class="kw">def</span> <span class="fn">post_siem</span>(<span class="var">self</span>, <span class="var">body</span>):
+    <span class="kw">return</span> requests.<span class="fn">post</span>(
+        <span class="str">"https://host/crux/v3/siem"</span>,
+        json=<span class="var">body</span>
+    )
+<span class="cm"># 50 APIs = 50 methods 😫</span></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+        <div class="code-title">✅ With this engine</div>
+      </div>
+      <pre style="font-size:0.72rem;"><span class="cm"># Just add to apis.json</span>
+{
+  <span class="str">"new_endpoint"</span>: {
+    <span class="str">"URI"</span>: <span class="str">"crux/v3/new"</span>,
+    <span class="str">"GET"</span>: {
+      <span class="str">"STATUS_CODE"</span>: <span class="num">200</span>
+    }
+  }
+}
+
+<span class="cm"># Zero Python code needed ✅</span>
+<span class="cm"># 50 APIs = 50 JSON entries</span></pre>
+    </div>
+  </div>
+
+  <!-- API Contract comparison -->
+  <div style="margin-top:3rem;">
+    <div class="section-tag">// API CONTRACT TYPES — CONTEXT</div>
+    <h3 style="margin: 0.5rem 0 0.5rem; font-size:1.1rem;">Where This Fits in the Industry</h3>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem;">The framework uses a custom lightweight contract — pragmatic for an internal test framework. Here's how it compares:</p>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border);">
+          <th style="text-align:left; padding:0.75rem; color:var(--muted); font-weight:600;">Contract Type</th>
+          <th style="text-align:left; padding:0.75rem; color:var(--muted); font-weight:600;">Use Case</th>
+          <th style="text-align:left; padding:0.75rem; color:var(--muted); font-weight:600;">File Generation</th>
+          <th style="text-align:left; padding:0.75rem; color:var(--muted); font-weight:600;">Type Safety</th>
+          <th style="text-align:left; padding:0.75rem; color:var(--muted); font-weight:600;">Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border); background:rgba(0,245,196,0.03);">
+          <td style="padding:0.75rem;"><span class="badge badge-green">THIS FRAMEWORK</span>Custom apis.json</td>
+          <td style="padding:0.75rem;">Internal test automation</td>
+          <td style="padding:0.75rem; color:var(--accent);">❌ None</td>
+          <td style="padding:0.75rem; color:var(--muted);">Runtime</td>
+          <td style="padding:0.75rem; color:var(--accent);">Agile test frameworks</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><span class="badge badge-purple">OPENAPI</span>YAML/JSON spec</td>
+          <td style="padding:0.75rem;">Public REST APIs</td>
+          <td style="padding:0.75rem; color:var(--muted);">✅ SDK + Docs</td>
+          <td style="padding:0.75rem; color:var(--accent);">Full</td>
+          <td style="padding:0.75rem;">External developer APIs</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><span class="badge badge-orange">gRPC</span>.proto files</td>
+          <td style="padding:0.75rem;">High-perf microservices</td>
+          <td style="padding:0.75rem; color:var(--muted);">✅ Required</td>
+          <td style="padding:0.75rem; color:var(--accent);">Strict</td>
+          <td style="padding:0.75rem;">Internal service mesh</td>
+        </tr>
+        <tr>
+          <td style="padding:0.75rem;"><span class="badge badge-purple">AsyncAPI</span>YAML spec</td>
+          <td style="padding:0.75rem;">Event-driven / streaming</td>
+          <td style="padding:0.75rem; color:var(--muted);">✅ Optional</td>
+          <td style="padding:0.75rem; color:var(--muted);">Schema</td>
+          <td style="padding:0.75rem; color:var(--accent);">Telegraf/Vector pipelines</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- DESIGN PATTERNS -->
+<section id="patterns">
+  <div class="section-tag">// 03 — DESIGN PATTERNS</div>
+  <h2>Patterns in <span>Practice</span></h2>
+  <p class="section-intro">Every pattern in the codebase serves a specific purpose — not applied for academic reasons but to solve real problems of scale, maintainability, and test isolation.</p>
+
+  <div class="patterns-grid">
+    <div class="pattern-card">
+      <div class="pattern-icon">🎭</div>
+      <div class="pattern-name">Dynamic Dispatch</div>
+      <div class="pattern-where">generate_apis.py → __getattr__</div>
+      <div class="pattern-desc">Intercepts any method call at runtime. Converts method names like post_siem_association into configured HTTP callables from JSON config.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🏗️</div>
+      <div class="pattern-name">Facade</div>
+      <div class="pattern-where">GenericUtils → check_and_associate_siem()</div>
+      <div class="pattern-desc">Hides the complexity of check → delete → create SIEM flow behind a single method. Test layer never knows about 3 underlying API calls.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🔀</div>
+      <div class="pattern-name">Strategy</div>
+      <div class="pattern-where">DatadogMetrics / CloudWatchMetricFetcher</div>
+      <div class="pattern-desc">Both SIEM utilities share the same interface contract — init with name → decrypt config → get agent ID → query. Swappable at runtime via SIEM_MAP.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🗄️</div>
+      <div class="pattern-name">Flyweight + Cache</div>
+      <div class="pattern-where">PortalRest → __session_auth_map</div>
+      <div class="pattern-desc">Class-level token cache keyed by (identity, account, contract). Tokens reused across test instances. Proactively refreshed at 50 min before 60-min expiry.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">📋</div>
+      <div class="pattern-name">Declarative Config</div>
+      <div class="pattern-where">apis.json / SIEM_MAP</div>
+      <div class="pattern-desc">Behaviour defined in data, not code. Adding an API or SIEM type requires zero Python changes — only config updates.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🏭</div>
+      <div class="pattern-name">Factory (Closure)</div>
+      <div class="pattern-where">make_request() in ApiGroup</div>
+      <div class="pattern-desc">__getattr__ returns a configured function (closure), not a result. The callable captures host, verb, and URI in its scope — produced on demand.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🔧</div>
+      <div class="pattern-name">Template Method</div>
+      <div class="pattern-where">PortalRest.__init__</div>
+      <div class="pattern-desc">Defines the skeleton of auth initialization — validate → cache check → create if needed → assign. Each auth strategy fills in specifics.</div>
+    </div>
+    <div class="pattern-card">
+      <div class="pattern-icon">🧹</div>
+      <div class="pattern-name">RAII / Destructor</div>
+      <div class="pattern-where">ResourceSpiker.__del__()</div>
+      <div class="pattern-desc">SSH connection lifecycle tied to object lifetime. __del__ ensures cleanup even if test fails. Noted: context manager would be more deterministic.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="section-tag">// 04 — SECURITY DESIGN</div>
+  <h2>Secrets <span>Management</span></h2>
+  <p class="section-intro">All credentials — API keys, AWS secrets, login passwords — are encrypted at rest using Fernet symmetric encryption. The decryption key never touches the codebase.</p>
+
+  <div class="security-flow">
+    <div class="sec-step"><div class="sec-step-icon">📄</div><div>Plaintext JSON<br><span style="font-size:0.65rem; color:var(--muted);">siem_details.json</span></div></div>
+    <div class="sec-arrow">→</div>
+    <div class="sec-step"><div class="sec-step-icon">🔑</div><div>Fernet Encrypt<br><span style="font-size:0.65rem; color:var(--muted);">SecretsCryptography</span></div></div>
+    <div class="sec-arrow">→</div>
+    <div class="sec-step"><div class="sec-step-icon">🔒</div><div>Encrypted File<br><span style="font-size:0.65rem; color:var(--muted);">siem_details.json.enc</span></div></div>
+    <div class="sec-arrow">→</div>
+    <div class="sec-step"><div class="sec-step-icon">🌍</div><div>Key via Env Var<br><span style="font-size:0.65rem; color:var(--muted);">metric_encryption_key</span></div></div>
+    <div class="sec-arrow">→</div>
+    <div class="sec-step"><div class="sec-step-icon">✅</div><div>Runtime Decrypt<br><span style="font-size:0.65rem; color:var(--muted);">→ Python dict</span></div></div>
+  </div>
+
+  <div class="code-block" style="margin-top:1.5rem;">
+    <div class="code-header">
+      <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+      <div class="code-title">encryption_decryption.py</div>
+    </div>
+    <pre><span class="kw">from</span> cryptography.fernet <span class="kw">import</span> Fernet
+
+<span class="kw">class</span> <span class="cls">SecretsCryptography</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="var">self</span>, <span class="var">key</span>: str, <span class="var">file_for_decryption</span>: str):
+        <span class="var">self</span>.cipher = Fernet(<span class="var">key</span>.<span class="fn">encode</span>())
+
+    <span class="kw">def</span> <span class="fn">decrypt_file_to_dict</span>(<span class="var">self</span>) -> dict:
+        <span class="cm"># Encrypted .enc file → Python dict at runtime</span>
+        <span class="kw">with</span> <span class="fn">open</span>(<span class="var">self</span>.file_for_decryption, <span class="str">"rb"</span>) <span class="kw">as</span> <span class="var">f</span>:
+            token = <span class="var">f</span>.<span class="fn">read</span>()
+        <span class="kw">return</span> json.<span class="fn">loads</span>(<span class="var">self</span>.cipher.<span class="fn">decrypt</span>(token))</pre>
+  </div>
+
+  <!-- SIEM MAP -->
+  <div style="margin-top: 3rem; margin-bottom:1rem;">
+    <div class="section-tag">// SIEM INTEGRATIONS</div>
+    <h3 style="font-size:1.1rem; margin-bottom:0.5rem;">Supported SIEM Platforms</h3>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem;">Unified interface — swap SIEM type via a single string parameter</p>
+  </div>
+  <div class="siem-grid">
+    <div class="siem-card">
+      <div class="siem-card-name">Datadog</div>
+      <div class="siem-card-key">datadog → dataDog_1</div>
+    </div>
+    <div class="siem-card">
+      <div class="siem-card-name">AWS CloudWatch</div>
+      <div class="siem-card-key">cloudwatch → cloudwatch_1</div>
+    </div>
+    <div class="siem-card">
+      <div class="siem-card-name">Splunk</div>
+      <div class="siem-card-key">splunk → splunk_1</div>
+    </div>
+    <div class="siem-card">
+      <div class="siem-card-name">TrafficPeak</div>
+      <div class="siem-card-key">trafficpeak → trafficPeak_1</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FOLDER STRUCTURE -->
+<section id="structure">
+  <div class="section-tag">// 05 — PROJECT STRUCTURE</div>
+  <h2>Folder <span>Structure</span></h2>
+  <p class="section-intro">Clean separation of concerns across layers — tests never touch HTTP, utilities never touch test logic.</p>
+
+  <div class="folder-tree">
+    <div class="tree-row"><span class="tree-folder">📁 dyno/</span></div>
+
+    <div class="tree-row tree-indent-1"><span class="tree-pipe">├──</span> <span class="tree-folder">📁 tests/</span></div>
+    <div class="tree-row tree-indent-2"><span class="tree-pipe">└──</span> <span class="tree-folder">📁 hybrid_griffin / eaa_core / eaa_observability_metrics /</span></div>
+    <div class="tree-row tree-indent-3"><span class="tree-pipe">└──</span> <span class="tree-folder">📁 Connector_Metrics /</span></div>
+    <div class="tree-row tree-indent-4 tree-file-row">
+      <span class="tree-pipe">└──</span>
+      <span class="tree-highlight">🧪 TestEAAObservabilityMetricsConnector.py</span>
+      <span class="tree-comment">Test layer — orchestrates spike + verify</span>
+    </div>
+
+    <div class="tree-spacer"></div>
+
+    <div class="tree-row tree-indent-1"><span class="tree-pipe">└──</span> <span class="tree-folder">📁 lib / dyno / products / hybrid_griffin / open_api / eaa_metrics /</span></div>
+
+    <div class="tree-row tree-indent-2 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">📋 apis.json</span>
+      <span class="tree-comment">Declarative API contract — URI, HTTP verbs, status codes</span>
+    </div>
+    <div class="tree-row tree-indent-2 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">⚙️ apis.py</span>
+      <span class="tree-comment">EaaMetricsApis — SIEM association CRUD operations</span>
+    </div>
+    <div class="tree-row tree-indent-2 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">🔧 generic_utils.py</span>
+      <span class="tree-comment">Facade — hides check / delete / create SIEM flow</span>
+    </div>
+
+    <div class="tree-row tree-indent-2"><span class="tree-pipe">├──</span> <span class="tree-folder">📁 data /</span></div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">🔒 siem_details.json.enc</span>
+      <span class="tree-comment">Encrypted — Datadog API keys, AWS credentials</span>
+    </div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">└──</span>
+      <span class="tree-highlight">🔒 ui_login.json.enc</span>
+      <span class="tree-comment">Encrypted — login creds for Part 2 DPOP / access logs</span>
+    </div>
+
+    <div class="tree-row tree-indent-2"><span class="tree-pipe">└──</span> <span class="tree-folder">📁 metrics_utility /</span></div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">🖥️ common_utility.py</span>
+      <span class="tree-comment">SSH to connector, agent ID extraction, SIEM_MAP registry</span>
+    </div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">📈 metric_generator.py</span>
+      <span class="tree-comment">ResourceSpiker — CPU / Disk / Network spikes via SSH</span>
+    </div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">🐕 datadog_utility.py</span>
+      <span class="tree-comment">Datadog API — query metrics, check threshold</span>
+    </div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">├──</span>
+      <span class="tree-highlight">☁️ cloudwatch_utility.py</span>
+      <span class="tree-comment">AWS CloudWatch — discover dimensions, fetch datapoints</span>
+    </div>
+    <div class="tree-row tree-indent-3 tree-file-row">
+      <span class="tree-pipe">└──</span>
+      <span class="tree-highlight">🔐 encryption_decryption.py</span>
+      <span class="tree-comment">Fernet symmetric encrypt / decrypt for all secrets</span>
+    </div>
+  </div>
+
+</section>
+
+<hr class="divider">
+
+<footer>
+  <div class="footer-left">// EAA_OBSERVABILITY_FRAMEWORK · dyno · Python</div>
+  <div class="footer-right">
+    <span class="badge badge-green">Telegraf Metrics</span>
+    <span class="badge badge-purple">Vector Access Logs</span>
+    <span class="badge badge-orange">Multi-SIEM</span>
+  </div>
+</footer>
+
+</body>
+</html>
